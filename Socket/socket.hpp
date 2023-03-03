@@ -6,7 +6,7 @@
 /*   By: tchtaibi <tchtaibi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/01 15:02:16 by tchtaibi          #+#    #+#             */
-/*   Updated: 2023/03/03 02:48:42 by tchtaibi         ###   ########.fr       */
+/*   Updated: 2023/03/03 02:56:24 by tchtaibi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ namespace ws{
                 test_connection(listening);
                 ft_accept(servers);
             }
-            location locationChecker(std::string path, std::map<std::string, location> &Location)
+            std::map<std::string, location>::iterator locationChecker(std::string path, std::map<std::string, location> &Location)
             {
                 bool c = false;
                 std::vector<std::string> pathComponents;
@@ -114,9 +114,9 @@ namespace ws{
                     write(new_socket , NULL , 1);
                     printf("------------------message sent-------------------\n");
                     HttpRequest req = parse_http_request(buffer);
-                    location methodLocation = locationChecker(req.path, servers.get_location());
-                    if (methodLocation != servers.get_location().end()->second)
-                        if(methodChecker(req.method, methodLocation.get_method()))
+                    std::map<std::string, location>::iterator itLocation = locationChecker(req.path, servers.get_location());
+                    if (itLocation != servers.get_location().end())
+                        if(methodChecker(req.method, itLocation->second.get_method()))
                         {
                             //response
                         }
