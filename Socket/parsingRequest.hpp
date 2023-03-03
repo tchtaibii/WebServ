@@ -5,6 +5,7 @@
 #include <sstream>
 
 namespace ws{
+    // struct of http request
     struct HttpRequest {
         std::string method;
         std::string path;
