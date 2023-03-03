@@ -6,7 +6,7 @@
 /*   By: tchtaibi <tchtaibi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/01 15:02:16 by tchtaibi          #+#    #+#             */
-/*   Updated: 2023/03/03 14:33:36 by tchtaibi         ###   ########.fr       */
+/*   Updated: 2023/03/03 16:01:42 by tchtaibi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,7 +92,10 @@ namespace ws{
             }
             bool methodChecker(std::string method,  std::vector<std::string> Location)
             {
-                return true;
+                for(size_t n = 0; n < Location.size(); n++)
+                    if (Location[n] == method)
+                        return true;
+                return false;
             }
             void ft_accept(server servers)
             {
