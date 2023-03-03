@@ -6,7 +6,7 @@
 /*   By: tchtaibi <tchtaibi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/01 15:02:16 by tchtaibi          #+#    #+#             */
-/*   Updated: 2023/03/03 00:53:53 by tchtaibi         ###   ########.fr       */
+/*   Updated: 2023/03/03 02:48:42 by tchtaibi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,14 +46,14 @@ namespace ws{
                 this->service = service;
                 this->protocol = protocol;
             }
-            void start()
+            void start(server servers)
             {
                 // Etablish socket
                 sock = socket(domain,service, protocol);
                 if (sock == 0)
                 {
                     // perror("In socket...");
-                    // exit(EXIT_FAILURE);
+                    exit(EXIT_FAILURE);
                 }
                 // adress struct
                 address.sin_family = domain;
@@ -64,12 +64,44 @@ namespace ws{
                 test_connection(connection);
                 listening = listen(sock, backlog);
                 test_connection(listening);
-                ft_accept();
+                ft_accept(servers);
             }
-            void ft_accept()
+            location locationChecker(std::string path, std::map<std::string, location> &Location)
+            {
+                bool c = false;
+                std::vector<std::string> pathComponents;
+                std::stringstream ss(path);
+                std::string component;
+                std::getline(ss, component, '/');
+                std::string tmp = "\0";
+                pathComponents.push_back("/" + component);
+                while (std::getline(ss, component, '/'))
+                {
+                    pathComponents.push_back(tmp + "/" + component);
+                    tmp += "/" + component;
+                }
+                std::string location_tmp;
+                std::map<std::string, location>::iterator it;
+                for (size_t n = 0; pathComponents.size() > n; n++)
+                {
+                    it = Location.find(pathComponents[n]);
+                    if (it != Location.end())
+                    {
+                        location_tmp = pathComponents[n];
+                        c = true;
+                    }
+                }
+                if (c)
+                    return it->second;
+                return Location.end()->second;
+            }
+            bool methodChecker(std::string method,  std::vector<std::string> Location)
+            {
+                
+            }
+            void ft_accept(server servers)
             {
                 int valread;
-                std::string str;
                 int addrlen = sizeof(address);
                 while(1)
                 {
@@ -77,11 +109,18 @@ namespace ws{
                     new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t*)&addrlen);
                     test_connection(new_socket);
                     char buffer[30000] = {0};
-                    valread = read( new_socket , buffer, 30000);
-                    // printf("%s\n",buffer );
-                    write(new_socket , str.c_str() , str.length());
+                    valread = read(new_socket , buffer, 30000);
+                    // std::cout << buffer << std::endl;
+                    write(new_socket , NULL , 1);
                     printf("------------------message sent-------------------\n");
                     HttpRequest req = parse_http_request(buffer);
+                    location methodLocation = locationChecker(req.path, servers.get_location());
+                    if (methodLocation != servers.get_location().end()->second)
+                        if(methodChecker(req.method, methodLocation.get_method()))
+                        {
+                            //response
+                        }
+                    
                     // std::cout << "hello" << std::endl;
                     std::cout << "Method: " << req.method << std::endl;
                     std::cout << "Path: " << req.path << std::endl;
@@ -121,8 +160,8 @@ namespace ws{
             if (pid == -1) {
                 // error handling
             } else if (pid == 0) {
-                sockets[i].setPort(atoi(servers[i].get_port().c_str()));  // child process
-                sockets[i].start();
+                sockets[i].setPort(atoi(servers[i].get_port().c_str())); // child process
+                sockets[i].start(servers[i]);
                 exit(0);
             }
         }
