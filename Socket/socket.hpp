@@ -6,7 +6,7 @@
 /*   By: tchtaibi <tchtaibi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/01 15:02:16 by tchtaibi          #+#    #+#             */
-/*   Updated: 2023/03/04 17:17:08 by tchtaibi         ###   ########.fr       */
+/*   Updated: 2023/03/04 17:59:55 by tchtaibi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ namespace ws
         int connection;
         int listening;
         int backlog;
-        int new_socket;
+        // int new_socket;
         int domain;
         u_long interface;
         int port;
@@ -51,12 +51,15 @@ namespace ws
         void start(server servers)
         {
             // Etablish socket
+            (void)servers;
             sock = socket(domain, service, protocol);
             if (sock == 0)
             {
                 perror("In socket...");
                 exit(EXIT_FAILURE);
             }
+            int on = 1024;
+            setsockopt(sock, SOL_SOCKET,  SO_REUSEADDR, (char *)&on, sizeof(on));
             // init adress struct
             address.sin_family = domain;
             address.sin_addr.s_addr = htonl(interface);
@@ -72,6 +75,8 @@ namespace ws
         }
         std::map<std::string, location>::iterator locationChecker(std::string path, std::map<std::string, location> &Location)
         {
+            if (path == "/")
+                return Location.find(path);
             std::vector<std::string> pathComponents; // vector of paths
             std::stringstream ss(path);
             std::string component;            // tmp of one path
@@ -99,35 +104,35 @@ namespace ws
                     return true;
             return false;
         }
-        void ft_accept(server servers)
-        {
-            int valread;
-            int addrlen = sizeof(address);
-            int errorFlag;
-            while (1)
-            {
-                new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen); // new FD that take the request
-                test_connection(new_socket);
-                char buffer[1024] = {0};
-                valread = read(new_socket, buffer, 30000); // reading the request from FD(new_socket) and stock it on buffer
-                write(new_socket, NULL, 1);
-                printf("------------------message sent-------------------\n");
-                std::cout << buffer << std::endl;
-                HttpRequest req = parse_http_request(buffer);                                                             // parsing the request
-                std::map<std::string, location>::iterator itLocation = locationChecker(req.path, servers.get_location()); // getting the location from the server
-                if (itLocation != servers.get_location().end())                                                           // check if the location is existing or not
-                {
-                    if (methodChecker(req.method, itLocation->second.get_method())) // check if the method of request is existing on the location
-                    {
-                        // response
-                    }
-                    else
-                    {
-                        // error page
-                    }
-                }
-            }
-        }
+        // void ft_accept(server servers)
+        // {
+        //     int valread;
+        //     int addrlen = sizeof(address);
+        //     int errorFlag;
+        //     while (1)
+        //     {
+        //         new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen); // new FD that take the request
+        //         test_connection(new_socket);
+        //         char buffer[1024] = {0};
+        //         valread = read(new_socket, buffer, 30000); // reading the request from FD(new_socket) and stock it on buffer
+        //         write(new_socket, NULL, 1);
+        //         printf("------------------message sent-------------------\n");
+        //         std::cout << buffer << std::endl;
+        //         HttpRequest req = parse_http_request(buffer);                                                             // parsing the request
+        //         std::map<std::string, location>::iterator itLocation = locationChecker(req.path, servers.get_location()); // getting the location from the server
+        //         if (itLocation != servers.get_location().end())                                                           // check if the location is existing or not
+        //         {
+        //             if (methodChecker(req.method, itLocation->second.get_method())) // check if the method of request is existing on the location
+        //             {
+        //                 // response
+        //             }
+        //             else
+        //             {
+        //                 // error page
+        //             }
+        //         }
+        //     }
+        // }
         void test_connection(int itemToTest)
         {
             if (itemToTest < 0)
@@ -147,17 +152,18 @@ namespace ws
         ~Socket() {}
     };
     void connection_loop(std::vector<server> servers, Socket sockets[])
-    {
+    {       
+        fd_set readfds;
+        int valread;
+        // int errorFlag;
+
         while (1)
         {
-            fd_set readfds;
-            int valread;
-            int errorFlag;
             FD_ZERO(&readfds);
-            for (int i = 0; i < servers.size(); i++)
+            for (size_t i = 0; i < servers.size(); i++)
                 FD_SET(sockets[i].getSock(), &readfds);
             int max_fd = sockets[0].getSock();
-            for (int i = 0; i < servers.size(); i++)
+            for (size_t i = 0; i < servers.size(); i++)
             {
                 if (sockets[i].getSock() > max_fd)
                     max_fd = sockets[i].getSock();
@@ -166,7 +172,7 @@ namespace ws
             if ((activity < 0) && (errno != EINTR))
                 printf("select error");
             int new_socket;
-            for (int i = 0; i < servers.size(); i++)
+            for (size_t i = 0; i < servers.size(); i++)
             {
                 if (FD_ISSET(sockets[i].getSock(), &readfds))
                 {
@@ -202,7 +208,7 @@ namespace ws
 
         Socket sockets[servers.size()]; // initialize of sockets (multiple sockets) by how many server we have
 
-        for (int i = 0; i < servers.size(); i++) // loop for create procces of each server
+        for (size_t i = 0; i < servers.size(); i++) // loop for create procces of each server
         {
             sockets[i].setPort(atoi(servers[i].get_port().c_str())); // setting the port of the server
             sockets[i].start(servers[i]);                            // starting the socket
