@@ -6,7 +6,7 @@
 /*   By: tchtaibi <tchtaibi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/01 15:02:16 by tchtaibi          #+#    #+#             */
-/*   Updated: 2023/03/04 17:59:55 by tchtaibi         ###   ########.fr       */
+/*   Updated: 2023/03/04 22:09:09 by tchtaibi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,7 +91,8 @@ namespace ws
             std::map<std::string, location>::iterator it;
             for (size_t n = pathComponents.size(); n > 0; n--) // check if one of the pathComponents is exiting on the server(location)
             {
-                it = Location.find(pathComponents[n]);
+                it = Location.find(pathComponents[n - 1]);
+                std::cout << "skchhh" << std::endl;
                 if (it != Location.end())
                     return it;
             }
@@ -108,7 +109,7 @@ namespace ws
         // {
         //     int valread;
         //     int addrlen = sizeof(address);
-        //     int errorFlag;
+        //     int statusCode;
         //     while (1)
         //     {
         //         new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen); // new FD that take the request
@@ -155,7 +156,7 @@ namespace ws
     {       
         fd_set readfds;
         int valread;
-        // int errorFlag;
+        int statusCode;
 
         while (1)
         {
@@ -195,8 +196,12 @@ namespace ws
                         }
                         else
                         {
-                            // error page
+                            statusCode = 405;
                         }
+                    }
+                    else // If a location is not found on the server
+                    {
+                        statusCode = 404;
                     }
                 }
             }
