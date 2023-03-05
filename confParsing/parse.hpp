@@ -33,6 +33,7 @@ class server
 {
     private :
         std::string 					    		port;
+		int											socket;
         std::string 								host;
         std::string 								server_name;
         std::string                         		body_size;
@@ -42,6 +43,8 @@ class server
     public :
 		int											flg;
         std::string const &  						get_port() const ;
+		int const &  								getSocket() const ;
+		void		  								setSocket(const int &sock);
         void    									set_port(const std::string &p);
         std::string const &							get_host() const; 
 		void										set_host(const std::string &host);

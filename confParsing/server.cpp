@@ -69,3 +69,11 @@ void		server::set_location(const std::map<std::string, location> &a)
 {
     this->_location = a;
 }
+int const &  								server::getSocket() const
+{
+    return this->socket;
+}
+void		  								server::setSocket(const int &sock)
+{
+    this->socket = sock;
+}
