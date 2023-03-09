@@ -75,8 +75,8 @@ namespace ws
                         {
                             // If data has been read from the client socket, process
                             // the request and send a response back to the client.
-                            std::cout << buffer << std::endl;
-                            HttpRequest req = parse_http_request(buffer);
+                            std::cout << buffer;
+                            // HttpRequest req = parse_http_request(buffer);
                             send(fileD, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\nHello, World!\r\n", 100, 0);
                         }
                         else
