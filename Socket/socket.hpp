@@ -6,7 +6,7 @@
 /*   By: tchtaibi <tchtaibi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/01 15:02:16 by tchtaibi          #+#    #+#             */
-/*   Updated: 2023/03/05 22:06:13 by tchtaibi         ###   ########.fr       */
+/*   Updated: 2023/03/09 18:24:16 by tchtaibi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <cstring>
-#include "parsingRequest.hpp"
+#include "../requestParsing/parsingRequest.hpp"
 #include "../confParsing/parsingConf.hpp"
 
 namespace ws

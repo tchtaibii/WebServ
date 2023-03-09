@@ -16,7 +16,7 @@ namespace ws
         std::vector<int> fds;
         std::vector<int> clients;
         fd_set readfds;
-        fd_set writefds;
+        // fd_set writefds;
         int max = 0;
         int new_socket;
         FD_ZERO(&readfds);
@@ -76,6 +76,7 @@ namespace ws
                             // If data has been read from the client socket, process
                             // the request and send a response back to the client.
                             std::cout << buffer << std::endl;
+                            HttpRequest req = parse_http_request(buffer);
                             send(fileD, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\nHello, World!\r\n", 100, 0);
                         }
                         else
