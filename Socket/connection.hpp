@@ -1,0 +1,89 @@
+#pragma once
+#include "socket.hpp"
+#include <fcntl.h>
+namespace ws
+{
+    std::map<int, server> ft_fds(std::vector<server> &servers)
+    {
+        std::map<int, server> fds;
+        for (size_t i = 0; i < servers.size(); i++)
+            fds.insert(std::make_pair(servers[i].getSocket(), servers[i]));
+        return fds;
+    }
+    void connection_loop(std::vector<server> &servers)
+    {
+        std::map<int, server> fds_servers = ft_fds(servers);
+        std::vector<int> fds;
+        std::vector<int> clients;
+        fd_set readfds;
+        fd_set writefds;
+        int max = 0;
+        int new_socket;
+        FD_ZERO(&readfds);
+        for (std::map<int, server>::iterator it = fds_servers.begin(); it != fds_servers.end(); it++)
+        {
+            fds.push_back(it->first);
+            FD_SET(it->first, &readfds);
+            if (it->first > max)
+                max = it->first;
+        }
+        while (1)
+        {
+            fd_set tmp_readfds = readfds;
+            if (select(max + 1, &tmp_readfds, NULL, NULL, NULL) < 0)
+                throw std::runtime_error("Select error");
+
+            for (int fileD = 0; fileD <= max; fileD++)
+            {
+                if (FD_ISSET(fileD, &tmp_readfds))
+                {
+                    if (std::count(fds.begin(), fds.end(), fileD))
+                    {
+                        new_socket = accept(fileD, NULL, NULL);
+                        fcntl(new_socket, F_SETFL, O_NONBLOCK);
+                        FD_SET(new_socket, &readfds);
+                        FD_SET(new_socket, &tmp_readfds);
+                        clients.push_back(new_socket);
+                        if (new_socket > max)
+                            max = new_socket;
+                    }
+                    else
+                    {
+                        char buffer[30001] = {0};
+                        int valread = recv(fileD, buffer, 30000, 0);
+                        if (valread <= 0)
+                        {
+                            // close(fileD);
+                            // FD_CLR(fileD, &readfds);
+                            // FD_CLR(fileD, &tmp_readfds);
+                            clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
+                            fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
+                        }
+                        else if (valread > 0)
+                        {
+                            std::cout << buffer << std::endl;
+                            send(fileD, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\nHello, World!\r\n", 100, 0);
+                        }
+                        else
+                            throw std::runtime_error("Read error");
+                    }
+                }
+            }
+        }
+    }
+    void socketStart(std::vector<server> &servers)
+    {
+        std::cout << "Start..." << std::endl;
+
+        Socket sockets; // initialize of sockets (multiple sockets) by how many server we have
+
+        for (size_t i = 0; i < servers.size(); i++) // loop for create procces of each server
+        {
+            sockets.setPort(atoi(servers[i].get_port().c_str())); // setting the port of the server
+            sockets.start(servers[i]);                            // starting the socket
+            servers[i].setSocket(sockets.getSock());
+            servers[i].setcheck(false);
+        }
+        connection_loop(servers);
+    }
+}

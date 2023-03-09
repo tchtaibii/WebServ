@@ -40,11 +40,14 @@ class server
         std::string                         		error_page;
         std::map<std::string, std::string>  		cgi;
 		std::map<std::string, location>				_location;
+		bool										checker_flag;
     public :
 		int											flg;
         std::string const &  						get_port() const ;
 		int const &  								getSocket() const ;
 		void		  								setSocket(const int &sock);
+		bool const &  								getcheck() const ;
+		void		  								setcheck(const bool &b);
         void    									set_port(const std::string &p);
         std::string const &							get_host() const; 
 		void										set_host(const std::string &host);
