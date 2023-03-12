@@ -1,6 +1,8 @@
 #pragma once
-#include "socket.hpp"
+#include "Socket/socket.hpp"
 #include <fcntl.h>
+#include "requestParsing/checkRequest.hpp"
+#define  READ_N 1024
 namespace ws
 {
     std::map<int, server> ft_fds(std::vector<server> &servers)
@@ -14,8 +16,10 @@ namespace ws
     {
         std::map<int, server> fds_servers = ft_fds(servers);
         std::vector<int> fds;
+        std::string request_tmp = "";
         std::vector<int> clients;
         fd_set readfds;
+        // int errorFlag = 0; 
         // fd_set writefds;
         int max = 0;
         int new_socket;
@@ -58,9 +62,10 @@ namespace ws
                     // If the file descriptor is a client socket, read data from it.
                     else
                     {
-                        char buffer[30001] = {0};
-                        int valread = recv(fileD, buffer, 30000, 0);
-                        if (valread <= 0)
+                        char buffer[READ_N] = {0};
+                        // int tmp_fd = fileD;
+                        int valread = recv(fileD, buffer, READ_N, 0);
+                        if (valread < 0)
                         {
                             // If the client socket has been closed or disconnected,
                             // remove it from the set of readable file descriptors and
@@ -70,14 +75,37 @@ namespace ws
                             close(fileD);
                             FD_CLR(fileD, &readfds);
                             max = *std::max_element(clients.begin(), clients.end());
+                            std::cout << "valread =*=*= " << valread << std::endl;
                         }
                         else if (valread > 0)
                         {
                             // If data has been read from the client socket, process
                             // the request and send a response back to the client.
-                            std::cout << buffer;
-                            // HttpRequest req = parse_http_request(buffer);
-                            send(fileD, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\nHello, World!\r\n", 100, 0);
+                            std::string request_str = std::string(buffer, valread);
+                            // std::cout << request_str << std::endl;
+                            request_tmp += request_str;
+                            
+                        }
+                        else if (valread == 0)
+                        {
+                            std::cout << request_tmp << std::endl;
+                            // std::cout << "valread =*=*= " << request_tmp << std::endl;
+                            // std::cout << "length ==== " << request_tmp.length() << std::endl;
+                            // HttpRequest req;
+                            // req = parse_http_request(request_str);
+                            // errorFlag = is_req_well_formed(req); //checking errors header
+                            // if (!errorFlag)
+                            // {
+                                
+                                
+                            // }
+
+
+
+                            // keep reading after return the header from the request
+                            
+
+                            // send(fileD, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\nHello, World!\r\n", 100, 0);
                         }
                         else
                         {

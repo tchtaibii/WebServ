@@ -16,9 +16,9 @@ namespace ws
         std::string body;
     };
     // Parse the HTTP request string into an HttpRequest struct
-    HttpRequest parse_http_request(const char *request_str)
+    HttpRequest parse_http_request(std::string tmp)
     {
-        std::string tmp(request_str);
+        // std::string tmp(request_str);
         size_t pos = tmp.find("\r\n\r\n");
         HttpRequest req;
         std::string header_tmp = tmp.substr(0, pos);
@@ -41,20 +41,24 @@ namespace ws
             std::string header_value = line.substr(pos + 2);
             req.headers.insert(make_pair(header_name, header_value));
         }
-        if (req.method == "POST")
-        {
-            if (req.headers.count("Content-Length"))
-            {
-                // Read the body using the Content-Length header
-                int content_length = std::stoi(req.headers["Content-Length"]);
-                req.body = body_tmp.substr(0, content_length);
-            }
-            else if (req.headers.count("Transfer-Encoding") && req.headers["Transfer-Encoding"] == "chunked\r")
-            {
-                // Read the body using chunked encoding
-                std::stringstream ss(body_tmp);
-            }
-        }
+        req.body =  body_tmp;
+        // if (req.method == "POST")
+        // {
+        //     std::string a = req.headers["Content-Length"];
+        //     std::string b = req.headers["Transfer-Encoding"];
+        //     if (!a.empty())
+        //     {
+        //         int lenght = atoi(a.c_str());
+        //         char buffer
+        //         int valread = recv(fd, )
+        //     }
+        // }
         return req;
+    }
+    std::string bodyParsing(HttpRequest req, int fd)
+    {
+        (void) req , (void) fd;
+        
+        return "NULL";
     }
 }

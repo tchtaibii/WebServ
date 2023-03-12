@@ -16,4 +16,7 @@ clean :
 
 fclean : clean
 
+push : 
+	git add . && git commit -m "push from make" && git push origin webserv 
+
 re: fclean all
