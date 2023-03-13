@@ -73,23 +73,16 @@ namespace ws
                                 std::cout << "Version: " << req.version << std::endl;
                                 std::cout << "Headers:" << std::endl;
                                 for (std::map<std::string, std::string>::iterator it = req.headers.begin(); it != req.headers.end(); it++)
-                                {
                                     std::cout << "  " << it->first << ": " << it->second << std::endl;
-                                }
                                 std::cout << "body : ";
-                                // std::cout << tmp_body;
                             }
                             else
                             {
                                 bool end_with_0 = false;
                                 if (!req.con && req.method == "POST")
                                 {
-                                    // std::cout << request_str;
                                     if (req.chunked == true)
-                                    {
-                                        // std::cout << "yes is chunked" << std::endl;
                                         end_with_0 = isZero(request_str);
-                                    }
                                     tmp_body += request_str;
                                     req.con = bodyParsing(req, tmp_body, end_with_0);
                                 }
