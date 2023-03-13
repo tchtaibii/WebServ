@@ -63,38 +63,60 @@ namespace ws
                         else if (valread > 0)
                         {
                             std::string request_str = std::string(buffer, valread);
+                            std::cout << request_str;
+                            // req.end_ = isZero(request_str);
+                            // bool end_with_0 = 0;
                             if (!req.deja)
                             {
                                 req = parse_http_request(request_str, req);
                                 tmp_body = req.body;
                                 req.body = "";
-                                std::cout << "Method: " << req.method << std::endl;
-                                std::cout << "Path: " << req.path << std::endl;
-                                std::cout << "Version: " << req.version << std::endl;
-                                std::cout << "Headers:" << std::endl;
-                                for (std::map<std::string, std::string>::iterator it = req.headers.begin(); it != req.headers.end(); it++)
-                                    std::cout << "  " << it->first << ": " << it->second << std::endl;
-                                std::cout << "body : " << std::endl;;
+                                // request_str = "";
+                                // std::cout << "Method: " << req.method << std::endl;
+                                // std::cout << "Path: " << req.path << std::endl;
+                                // std::cout << "Version: " << req.version << std::endl;
+                                // std::cout << "Headers:" << std::endl;
+                                // for (std::map<std::string, std::string>::iterator it = req.headers.begin(); it != req.headers.end(); it++)
+                                //     std::cout << "  " << it->first << ": " << it->second << std::endl;
+                                // std::cout << "body : " << std::endl;
                             }
                             else
                             {
-                                bool end_with_0 = 0;
+                                // std::cout << tmp_body << std::endl;
                                 if (!req.con && req.method == "POST")
                                 {
                                     if (req.chunked == true)
-                                        end_with_0 = isZero(request_str);
+                                    {
+                                        req.end_ = isZero(request_str);
+                                        tmp_body = remove_chunk_headers(tmp_body);
+                                    }
                                     tmp_body += request_str;
-                                    req.con = bodyParsing(req, tmp_body, end_with_0);
+                                    request_str = "";
+                                    req.con = bodyParsing(req, tmp_body, req.end_);
                                     if (req.con)
+                                    {
                                         req.con = 0;
+                                    }
                                 }
                                 else{
                                     
                                 }
                             }
+                            // if the body is so small
+                            if (isZero(request_str) || (!req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length() ))
+                            {
+                                tmp_body = remove_chunk_headers(tmp_body);
+                                req.con = bodyParsing(req, tmp_body, 1);
+                                req.con = 0;
+                            }
                         }
                         else if (valread == 0)
                         {
+                            clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
+                            fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
+                            close(fileD);
+                            FD_CLR(fileD, &readfds);
+                            max = *std::max_element(clients.begin(), clients.end());
                             // Clear the req.body buffer for the next request
                             // int errorFlag = is_req_well_formed(req);
                             // if (!errorFlag)

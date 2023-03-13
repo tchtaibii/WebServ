@@ -21,15 +21,31 @@ namespace ws
         bool chunked;
         bool deja;
         bool con;
-        HttpRequest() : chunked(false), deja(false), con(false) {}
+        bool end_;
+        HttpRequest() : chunked(false), deja(false), con(false), end_(false) {}
     };
     // Parse the HTTP request string into an HttpRequest struct
     bool isZero(const std::string &httpRequest)
     {
         size_t pos = httpRequest.find("\r\n0\r\n\r\n");
         if (pos != std::string::npos)
+        {
+            // std::cout << "dkhlaaaat f zero" << std::endl;
             return 1;
+        }
         return 0;
+    }
+    void httpRequestInit(HttpRequest &req)
+    {
+        req.method = "";
+        req.path = "";
+        req.version = "";
+        req.headers.clear();
+        req.body = "";
+        req.chunked = 0;
+        req.deja = 0;
+        req.con = 0;
+        req.end_ = 0;
     }
     HttpRequest parse_http_request(std::string tmp, HttpRequest &req)
     {
@@ -96,18 +112,24 @@ namespace ws
 
     std::string remove_chunk_headers(std::string chunked_message)
     {
-        size_t pos1 = chunked_message.find("\r\n");
-        if (pos1 == std::string::npos)
-            return chunked_message;
-        std::string tmp = chunked_message.substr(pos1 + 2);
-        size_t pos = tmp.find("\r\n");
-        if (pos == std::string::npos)
-            return chunked_message;
-        tmp = tmp.substr(0, pos);
-        if (isHexadecimal(tmp))
+        while (1)
         {
-            tmp = "\r\n" + tmp + "\r\n";
-            chunked_message = chunked_message.replace(pos1, tmp.length(), "");
+            size_t pos1 = chunked_message.find("\r\n");
+            std::cout << pos1 << std::endl;
+            if (pos1 == std::string::npos)
+                break;
+            std::string tmp = chunked_message.substr(pos1 + 2);
+            size_t pos = tmp.find("\r\n");
+            std::cout << pos << std::endl;
+            if (pos == std::string::npos)
+                break;
+            tmp = tmp.substr(0, pos);
+            if (isHexadecimal(tmp))
+            {
+                tmp = "\r\n" + tmp + "\r\n";
+                chunked_message = chunked_message.replace(pos1, tmp.length(), "");
+            }
+            std::cout << "loop" << std::endl;
         }
         return chunked_message;
     }
@@ -124,6 +146,13 @@ namespace ws
                 {
                     req.body = body;
                     req.deja = false;
+                    std::ofstream file(randomString(18));
+                    if (file.is_open())
+                    {                     
+                        file << req.body;
+                        file.close();
+                    }
+                    httpRequestInit(req);
                     return true;
                 }
                 else
@@ -132,20 +161,18 @@ namespace ws
             else if (!b.empty() && "chunked\r" == b) // chunked
             {
                 req.chunked = true;
-                body = remove_chunk_headers(body);
                 if (the_end)
                 {
-                    req.body = body;
-                    req.deja = false;
-                    the_end = 0;
-                    std::ofstream file(randomString(18)); // create an output file stream
+                    std::cout << "heeeere " <<std::endl;
+                    std::cout << "hahahahahhaha" << std::endl;
+                    req.body = body.substr(0, body.length() - 2);
+                    std::ofstream file(randomString(18));
                     if (file.is_open())
-                    {                     // check if the file is open
-                        file << req.body; // write the string to the file
-                        file.close();     // close the file
+                    {                     
+                        file << req.body;
+                        file.close();
                     }
-                    req.body = "";
-                    // std::cout << req.body << std::endl;
+                    httpRequestInit(req);
                     return true;
                 }
                 return false;
