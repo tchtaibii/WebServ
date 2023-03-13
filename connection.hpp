@@ -74,17 +74,19 @@ namespace ws
                                 std::cout << "Headers:" << std::endl;
                                 for (std::map<std::string, std::string>::iterator it = req.headers.begin(); it != req.headers.end(); it++)
                                     std::cout << "  " << it->first << ": " << it->second << std::endl;
-                                std::cout << "body : ";
+                                std::cout << "body : " << std::endl;;
                             }
                             else
                             {
-                                bool end_with_0 = false;
+                                bool end_with_0 = 0;
                                 if (!req.con && req.method == "POST")
                                 {
                                     if (req.chunked == true)
                                         end_with_0 = isZero(request_str);
                                     tmp_body += request_str;
                                     req.con = bodyParsing(req, tmp_body, end_with_0);
+                                    if (req.con)
+                                        req.con = 0;
                                 }
                                 else{
                                     

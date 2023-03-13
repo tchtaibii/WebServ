@@ -3,6 +3,10 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
 
 namespace ws
 {
@@ -77,22 +81,35 @@ namespace ws
         }
         return true;
     }
+    std::string randomString(int length)
+    {
+        srand(time(NULL));                                                                    // seed the random number generator with the current time
+        std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.$@*"; // the characters to choose from
+        std::string result = "";
+        for (int i = 0; i < length; i++)
+        {
+            int randomIndex = rand() % characters.length(); // generate a random index
+            result += characters[randomIndex];              // add the random character to the result string
+        }
+        return result;
+    }
+
     std::string remove_chunk_headers(std::string chunked_message)
     {
-            size_t pos1 = chunked_message.find("\r\n");
-            if (pos1 == std::string::npos)
-                return chunked_message;
-            std::string tmp = chunked_message.substr(pos1 + 2);
-            size_t pos = tmp.find("\r\n");
-            if (pos == std::string::npos)
-                return chunked_message;
-            tmp = tmp.substr(0, pos);
-            if (isHexadecimal(tmp))
-            {
-                tmp = "\r\n" + tmp + "\r\n";
-                chunked_message = chunked_message.replace(pos1, tmp.length(), "");
-            }
+        size_t pos1 = chunked_message.find("\r\n");
+        if (pos1 == std::string::npos)
             return chunked_message;
+        std::string tmp = chunked_message.substr(pos1 + 2);
+        size_t pos = tmp.find("\r\n");
+        if (pos == std::string::npos)
+            return chunked_message;
+        tmp = tmp.substr(0, pos);
+        if (isHexadecimal(tmp))
+        {
+            tmp = "\r\n" + tmp + "\r\n";
+            chunked_message = chunked_message.replace(pos1, tmp.length(), "");
+        }
+        return chunked_message;
     }
     bool bodyParsing(HttpRequest &req, std::string &body, bool the_end)
     {
@@ -120,7 +137,15 @@ namespace ws
                 {
                     req.body = body;
                     req.deja = false;
-                    std::cout << req.body << std::endl;
+                    the_end = 0;
+                    std::ofstream file(randomString(18)); // create an output file stream
+                    if (file.is_open())
+                    {                     // check if the file is open
+                        file << req.body; // write the string to the file
+                        file.close();     // close the file
+                    }
+                    req.body = "";
+                    // std::cout << req.body << std::endl;
                     return true;
                 }
                 return false;
