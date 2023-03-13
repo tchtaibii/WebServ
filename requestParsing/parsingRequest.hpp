@@ -141,6 +141,7 @@ namespace ws
                 size_t lenght_body = atoi(a.c_str());
                 if (lenght_body == body.length())
                 {
+                    body = remove_chunk_headers(body);
                     req.body = body;
                     req.deja = false;
                     std::ofstream file(randomString(18));
@@ -160,6 +161,7 @@ namespace ws
                 req.chunked = true;
                 if (the_end)
                 {
+                    body = remove_chunk_headers(body);
                     req.body = body.substr(0, body.length() - 2);
                     std::ofstream file(randomString(18));
                     if (file.is_open())
