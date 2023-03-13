@@ -1,0 +1,14 @@
+[32mServer IS READY
+Start...
+Method: POST
+Path: /
+Version: HTTP/1.1
+Headers:
+  Accept: */*
+  Accept-Encoding: gzip, deflate, br
+  Connection: keep-alive
+  Content-Type: application/octet-stream
+  Host: localhost:1337
+  Postman-Token: f54746e3-0e61-4c4c-806f-567a5bab2f38
+  Transfer-Encoding: chunked
+  User-Agent: PostmanRuntime/7.31.0
