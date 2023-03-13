@@ -115,12 +115,10 @@ namespace ws
         while (1)
         {
             size_t pos1 = chunked_message.find("\r\n");
-            std::cout << pos1 << std::endl;
             if (pos1 == std::string::npos)
                 break;
             std::string tmp = chunked_message.substr(pos1 + 2);
             size_t pos = tmp.find("\r\n");
-            std::cout << pos << std::endl;
             if (pos == std::string::npos)
                 break;
             tmp = tmp.substr(0, pos);
@@ -129,7 +127,6 @@ namespace ws
                 tmp = "\r\n" + tmp + "\r\n";
                 chunked_message = chunked_message.replace(pos1, tmp.length(), "");
             }
-            std::cout << "loop" << std::endl;
         }
         return chunked_message;
     }
@@ -163,8 +160,6 @@ namespace ws
                 req.chunked = true;
                 if (the_end)
                 {
-                    std::cout << "heeeere " <<std::endl;
-                    std::cout << "hahahahahhaha" << std::endl;
                     req.body = body.substr(0, body.length() - 2);
                     std::ofstream file(randomString(18));
                     if (file.is_open())
