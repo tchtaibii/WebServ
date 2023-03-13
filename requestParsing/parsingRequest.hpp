@@ -99,7 +99,7 @@ namespace ws
     }
     std::string randomString(int length)
     {
-        srand(time(NULL));                                                                    // seed the random number generator with the current time
+        srand(time(NULL));                                                                               // seed the random number generator with the current time
         std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.$@*"; // the characters to choose from
         std::string result = "";
         for (int i = 0; i < length; i++)
@@ -109,7 +109,18 @@ namespace ws
         }
         return result;
     }
-
+    std::string remove_zero_chunked(std::string chunked_message)
+    {
+        size_t pos1 = chunked_message.find("\r\n");
+        if (pos1 == std::string::npos)
+            return chunked_message;;
+        std::string tmp = chunked_message.substr(pos1 + 2);
+        size_t pos = tmp.find("0\r\n");
+        if (pos == std::string::npos)
+            return chunked_message;;
+        chunked_message = chunked_message.replace(pos1, 5, "");
+        return chunked_message;
+    }
     std::string remove_chunk_headers(std::string chunked_message)
     {
         while (1)
@@ -141,12 +152,12 @@ namespace ws
                 size_t lenght_body = atoi(a.c_str());
                 if (lenght_body == body.length())
                 {
-                    body = remove_chunk_headers(body);
+                    // body = remove_chunk_headers(body);
                     req.body = body;
                     req.deja = false;
                     std::ofstream file(randomString(18));
                     if (file.is_open())
-                    {                     
+                    {
                         file << req.body;
                         file.close();
                     }
@@ -161,11 +172,12 @@ namespace ws
                 req.chunked = true;
                 if (the_end)
                 {
-                    body = remove_chunk_headers(body);
+                    // body = remove_chunk_headers(body);
+                    body = remove_zero_chunked(body);
                     req.body = body.substr(0, body.length() - 2);
                     std::ofstream file(randomString(18));
                     if (file.is_open())
-                    {                     
+                    {
                         file << req.body;
                         file.close();
                     }
