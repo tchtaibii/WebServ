@@ -61,6 +61,7 @@ namespace ws
                             int valread = recv(fileD, buffer, READ_N, 0);
                             if (valread < 0)
                             {
+
                                 clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
                                 fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
                                 close(fileD);
@@ -78,6 +79,7 @@ namespace ws
                                     req = parse_http_request(request_str, req);
                                     tmp_body = req.body;
                                     req.body = "";
+
                                     // request_str = "";
                                     // std::cout << "Method: " << req.method << std::endl;
                                     // std::cout << "Path: " << req.path << std::endl;
@@ -92,16 +94,20 @@ namespace ws
                                     // std::cout << tmp_body << std::endl;
                                     if (!req.con && req.method == "POST")
                                     {
+
                                         if (req.chunked == true)
                                         {
+
                                             req.end_ = isZero(request_str);
-                                            tmp_body = remove_chunk_headers(tmp_body);
+                                            if(!req.Boundary)
+                                                tmp_body = remove_chunk_headers(tmp_body);
                                         }
                                         tmp_body += request_str;
                                         request_str = "";
                                         req.con = bodyParsing(req, tmp_body, req.end_);
                                         if (req.con)
                                         {
+
                                             FD_SET(fileD, &writefds);
                                             FD_CLR(fileD, &readfds);
                                             req.con = 0;
@@ -120,6 +126,7 @@ namespace ws
                                 // if the body is so small
                                 if ((req.method == "POST" && isZero(request_str)) || (req.method == "POST" && !req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length()))
                                 {
+
                                     tmp_body = remove_chunk_headers(tmp_body);
                                     req.con = bodyParsing(req, tmp_body, 1);
                                     FD_SET(fileD, &writefds);
@@ -130,6 +137,7 @@ namespace ws
                             }
                             else if (valread == 0)
                             {
+
                                 clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
                                 fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
                                 close(fileD);

@@ -45,7 +45,7 @@ namespace ws
 
         while (pos != std::string::npos)
         { // repeat until sub not found
-            
+
             count++;
             pos = str.find(sub, pos + sub.length()); // find next occurrence of sub
         }
@@ -72,11 +72,12 @@ namespace ws
     }
     void httpRequestInit(HttpRequest &req)
     {
-        // req.method = "";
-        // req.path = "";
-        // req.version = "";
-        // req.headers.clear();
+        req.method = "";
+        req.path = "";
+        req.version = "";
+        req.headers.clear();
         req.body = "";
+        req.Boundary_token = "";
         req.chunked = 0;
         req.deja = 0;
         req.con = 0;
@@ -88,6 +89,7 @@ namespace ws
         // std::string tmp(request_str);
         if (!req.deja)
         {
+
             size_t pos = tmp.find("\r\n\r\n");
             std::string header_tmp = tmp.substr(0, pos);
             // Split the request string into lines
@@ -108,14 +110,26 @@ namespace ws
                 std::string header_value = line.substr(tmp_pos + 2);
                 req.headers.insert(make_pair(header_name, header_value));
             }
+
             if (req.method == "POST")
-                req.body = tmp.substr(pos + 2);
-            if (req.headers["Content-Type"].find("boundary=--------------------------"))
             {
-                req.Boundary_token = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("boundary=") + 9 + 26, 24);
-                std::cout << "|" << req.Boundary_token << "|" << std::endl;
-                req.Boundary = true;
+                req.body = tmp.substr(pos + 2);
+                try
+                {
+                    if (req.headers["Content-Type"].find("boundary=--------------------------"))
+                    {
+                        req.Boundary_token = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("boundary=") + 9 + 26, 24);
+                        std::cout << "|" << req.Boundary_token << "|" << std::endl;
+                        req.Boundary = true;
+                    }
+                }
+                catch (...)
+                {
+                    std::cerr << "" << '\n';
+                }
             }
+            // std::cout << "hadddi salaat" << std::endl;
+
             req.deja = true;
         }
         return req;
@@ -156,12 +170,10 @@ namespace ws
         size_t pos1 = chunked_message.find("\r\n");
         if (pos1 == std::string::npos)
             return chunked_message;
-        ;
         std::string tmp = chunked_message.substr(pos1 + 2);
         size_t pos = tmp.find("0\r\n");
         if (pos == std::string::npos)
             return chunked_message;
-        ;
         chunked_message = chunked_message.replace(pos1, 5, "");
         return chunked_message;
     }
@@ -196,11 +208,11 @@ namespace ws
                 size_t lenght_body = atoi(a.c_str());
                 if ((lenght_body + 2 == body.length()))
                 {
-                    req.body = body;
+                    req.body = body.substr(2);
                     if (req.Boundary)
                     {
                         req.deja = false;
-                        std::map<std::string, std::string> boundary_files = boundaryParsing(body.substr(2), req);
+                        std::map<std::string, std::string> boundary_files = boundaryParsing(req.body, req);
                         for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                         {
                             std::string tmp = it->first + "tmp";
@@ -213,18 +225,19 @@ namespace ws
                         }
                         httpRequestInit(req);
                         return true;
-                        
-                        
                     }
-                    req.deja = false;
-                    std::ofstream file(randomString(18));
-                    if (file.is_open())
+                    else
                     {
-                        file << req.body;
-                        file.close();
+                        req.deja = false;
+                        std::ofstream file(randomString(18));
+                        if (file.is_open())
+                        {
+                            file << req.body;
+                            file.close();
+                        }
+                        httpRequestInit(req);
+                        return true;
                     }
-                    httpRequestInit(req);
-                    return true;
                 }
                 else
                     return false;
@@ -234,7 +247,28 @@ namespace ws
                 req.chunked = true;
                 if (the_end)
                 {
-                    // body = remove_chunk_headers(body);
+                    
+                    if (req.Boundary)
+                    {
+                        req.deja = false;
+                        req.body = body.substr(2);
+                        std::map<std::string, std::string> boundary_files = boundaryParsing(req.body, req);
+                        for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
+                        {
+                            it->second = remove_chunk_headers(it->second);
+                            it->second = remove_zero_chunked(it->second);
+                            std::string tmp = it->first + "tmp";
+                            std::ofstream file(tmp);
+                            if (file.is_open())
+                            {
+                                file << it->second;
+                                file.close();
+                            }
+                        }
+                        httpRequestInit(req);
+                        return true;
+                    }
+                    body = remove_chunk_headers(body);
                     body = remove_zero_chunked(body);
                     req.body = body.substr(0, body.length() - 2);
                     std::ofstream file(randomString(18));
