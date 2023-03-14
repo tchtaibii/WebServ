@@ -43,8 +43,9 @@ namespace ws
         size_t count = 0;
         size_t pos = str.find(sub); // find first occurrence of sub
 
-        while (pos != string::npos)
+        while (pos != std::string::npos)
         { // repeat until sub not found
+            
             count++;
             pos = str.find(sub, pos + sub.length()); // find next occurrence of sub
         }
@@ -54,15 +55,17 @@ namespace ws
     {
         std::map<std::string, std::string> boundary_files;
         size_t count = countSubstring(body, "----------------------------" + req.Boundary_token);
-        for (size_t i = 0; i < count; i++)
+        for (size_t i = 0; i < count - 1; i++)
         {
             // if (body.find("Content-Disposition") != std::string::npos)
             // {
             size_t pos = body.find("filename=");
             std::string fileName = body.substr(pos + 10);
-            fileName = fileName.substr(0, fileName.find("\r\n"));
-            body = body.substr(body.find("\r\n\r\n"));
-            boundary_files.insert(std::make_pair(fileName, body.substr(0, body.find("----------------------------" + req.Boundary_token))));
+            fileName = fileName.substr(0, fileName.find("\"\r\n"));
+            body = body.substr(body.find("\r\n\r\n") + 2);
+            std::string tmp = body.substr(2, body.find("----------------------------" + req.Boundary_token) - 4);
+            body = body.substr(body.find(tmp) + tmp.length());
+            boundary_files.insert(std::make_pair(fileName, tmp));
             // }
         }
         return boundary_files;
@@ -107,12 +110,6 @@ namespace ws
             }
             if (req.method == "POST")
                 req.body = tmp.substr(pos + 2);
-            std::ofstream file("body.d");
-            if (file.is_open())
-            {
-                file << req.body;
-                file.close();
-            }
             if (req.headers["Content-Type"].find("boundary=--------------------------"))
             {
                 req.Boundary_token = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("boundary=") + 9 + 26, 24);
@@ -197,21 +194,25 @@ namespace ws
             if (!a.empty())
             {
                 size_t lenght_body = atoi(a.c_str());
-                if ((lenght_body + 2 == body.length()) || (req.Boundary && body.find("----------------------------" + req.Boundary + "--")))
+                if ((lenght_body + 2 == body.length()))
                 {
                     req.body = body;
                     if (req.Boundary)
                     {
+                        req.deja = false;
                         std::map<std::string, std::string> boundary_files = boundaryParsing(body.substr(2), req);
                         for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                         {
-                            std::ofstream file(it->first);
+                            std::string tmp = it->first + "tmp";
+                            std::ofstream file(tmp);
                             if (file.is_open())
                             {
                                 file << it->second;
                                 file.close();
                             }
                         }
+                        httpRequestInit(req);
+                        return true;
                         
                         
                     }
