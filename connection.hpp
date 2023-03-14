@@ -150,7 +150,7 @@ namespace ws
                                 throw std::runtime_error("Read error");
                             }
                         }
-                        if(FD_ISSET(fileD, &tmp_writefds))
+                        else
                         {
                             std::cout << "hhshshshshhs*****" << std::endl; 
                             server tmp_server = fds_servers[fileD];
