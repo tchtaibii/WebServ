@@ -102,9 +102,10 @@ namespace ws
                                         req.con = bodyParsing(req, tmp_body, req.end_);
                                         if (req.con)
                                         {
-                                            FD_SET(fileD, &tmp_writefds);
-									        FD_CLR(fileD, &tmp_readfds);
+                                            FD_SET(fileD, &writefds);
+									        FD_CLR(fileD, &readfds);
                                             req.con = 0;
+                                            continue;
                                         }
                                     }
                                 }
@@ -113,9 +114,10 @@ namespace ws
                                 {
                                     tmp_body = remove_chunk_headers(tmp_body);
                                     req.con = bodyParsing(req, tmp_body, 1);
-                                    FD_SET(fileD, &tmp_writefds);
-									FD_CLR(fileD, &tmp_readfds);
+                                    FD_SET(fileD, &writefds);
+									FD_CLR(fileD, &readfds);
                                     req.con = 0;
+                                    continue;
                                 }
                             }
                             else if (valread == 0)
@@ -125,6 +127,7 @@ namespace ws
                                 close(fileD);
                                 FD_CLR(fileD, &readfds);
                                 max = *std::max_element(clients.begin(), clients.end());
+                                continue ;
                                 // Clear the req.body buffer for the next request
                                 // int errorFlag = is_req_well_formed(req);
                                 // if (!errorFlag)
@@ -147,9 +150,11 @@ namespace ws
                                 throw std::runtime_error("Read error");
                             }
                         }
-                        else // FD_ISSET(fileD, &tmp_writefds)
+                        if(FD_ISSET(fileD, &tmp_writefds))
                         {
+                            std::cout << "hhshshshshhs*****" << std::endl; 
                             server tmp_server = fds_servers[fileD];
+                            FD_CLR(fileD, &writefds);
                         }
                     }
                 }
