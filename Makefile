@@ -17,6 +17,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "adding fd_isset response" && git push origin webserv 
+	git add . && git commit -m "Boundary" && git push origin webserv 
 
 re: fclean all
