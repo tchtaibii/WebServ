@@ -162,12 +162,12 @@ namespace ws
             std::string b = req.headers["Transfer-Encoding"];
             if (!a.empty())
             {
-                // if ()
-                // {
-
-                // }
+                if (req.Boundary)
+                {
+                    
+                }
                 size_t lenght_body = atoi(a.c_str());
-                if (lenght_body == body.length())
+                if (lenght_body + 2 == body.length())
                 {
                     // body = remove_chunk_headers(body);
                     req.body = body;
