@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <vector>
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
@@ -36,6 +37,35 @@ namespace ws
             return 1;
         }
         return 0;
+    }
+    size_t countSubstring(const std::string &str, const std::string &sub)
+    {
+        size_t count = 0;
+        size_t pos = str.find(sub); // find first occurrence of sub
+
+        while (pos != string::npos)
+        { // repeat until sub not found
+            count++;
+            pos = str.find(sub, pos + sub.length()); // find next occurrence of sub
+        }
+        return count;
+    }
+    std::map<std::string, std::string> boundaryParsing(std::string body, HttpRequest &req)
+    {
+        std::map<std::string, std::string> boundary_files;
+        size_t count = countSubstring(body, "----------------------------" + req.Boundary_token);
+        for (size_t i = 0; i < count; i++)
+        {
+            // if (body.find("Content-Disposition") != std::string::npos)
+            // {
+            size_t pos = body.find("filename=");
+            std::string fileName = body.substr(pos + 10);
+            fileName = fileName.substr(0, fileName.find("\r\n"));
+            body = body.substr(body.find("\r\n\r\n"));
+            boundary_files.insert(std::make_pair(fileName, body.substr(0, body.find("----------------------------" + req.Boundary_token))));
+            // }
+        }
+        return boundary_files;
     }
     void httpRequestInit(HttpRequest &req)
     {
@@ -84,7 +114,11 @@ namespace ws
                 file.close();
             }
             if (req.headers["Content-Type"].find("boundary=--------------------------"))
+            {
+                req.Boundary_token = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("boundary=") + 9 + 26, 24);
+                std::cout << "|" << req.Boundary_token << "|" << std::endl;
                 req.Boundary = true;
+            }
             req.deja = true;
         }
         return req;
@@ -162,15 +196,20 @@ namespace ws
             std::string b = req.headers["Transfer-Encoding"];
             if (!a.empty())
             {
-                if (req.Boundary)
-                {
-                    
-                }
                 size_t lenght_body = atoi(a.c_str());
-                if (lenght_body + 2 == body.length())
+                if ((lenght_body + 2 == body.length()) || (req.Boundary && body.find("----------------------------" + req.Boundary + "--")))
                 {
-                    // body = remove_chunk_headers(body);
                     req.body = body;
+                    if (req.Boundary)
+                    {
+                        std::map<std::string, std::string> boundary_files = boundaryParsing(body.substr(2), req);
+                        for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
+                        {
+                            
+                        }
+                        
+                        
+                    }
                     req.deja = false;
                     std::ofstream file(randomString(18));
                     if (file.is_open())
