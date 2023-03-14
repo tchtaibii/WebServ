@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
+#include <stdlib.h>
 
 namespace ws
 {
@@ -27,6 +28,18 @@ namespace ws
         std::string Boundary_token;
         HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false) {}
     };
+        std::string randomString(int length)
+    {
+        srand(time(NULL));                                                                               // seed the random number generator with the current time
+        std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.$@*"; // the characters to choose from
+        std::string result = "";
+        for (int i = 0; i < length; i++)
+        {
+            int randomIndex = rand() % characters.length(); // generate a random index
+            result += characters[randomIndex];              // add the random character to the result string
+        }
+        return result;
+    }
     // Parse the HTTP request string into an HttpRequest struct
     bool isZero(const std::string &httpRequest)
     {
@@ -41,13 +54,12 @@ namespace ws
     size_t countSubstring(const std::string &str, const std::string &sub)
     {
         size_t count = 0;
-        size_t pos = str.find(sub); // find first occurrence of sub
+        size_t pos = str.find(sub);
 
         while (pos != std::string::npos)
-        { // repeat until sub not found
-
+        {
             count++;
-            pos = str.find(sub, pos + sub.length()); // find next occurrence of sub
+            pos = str.find(sub, pos + sub.length());
         }
         return count;
     }
@@ -57,16 +69,17 @@ namespace ws
         size_t count = countSubstring(body, "----------------------------" + req.Boundary_token);
         for (size_t i = 0; i < count - 1; i++)
         {
-            // if (body.find("Content-Disposition") != std::string::npos)
-            // {
             size_t pos = body.find("filename=");
-            std::string fileName = body.substr(pos + 10);
+            std::string fileName;
+            if (pos != std::string::npos)
+                fileName = body.substr(pos + 10);
+            else
+                fileName = req.Boundary_token + randomString(1);
             fileName = fileName.substr(0, fileName.find("\"\r\n"));
             body = body.substr(body.find("\r\n\r\n") + 2);
             std::string tmp = body.substr(2, body.find("----------------------------" + req.Boundary_token) - 4);
             body = body.substr(body.find(tmp) + tmp.length());
             boundary_files.insert(std::make_pair(fileName, tmp));
-            // }
         }
         return boundary_files;
     }
@@ -89,7 +102,6 @@ namespace ws
         // std::string tmp(request_str);
         if (!req.deja)
         {
-
             size_t pos = tmp.find("\r\n\r\n");
             std::string header_tmp = tmp.substr(0, pos);
             // Split the request string into lines
@@ -153,18 +165,6 @@ namespace ws
         }
         return true;
     }
-    std::string randomString(int length)
-    {
-        srand(time(NULL));                                                                               // seed the random number generator with the current time
-        std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.$@*"; // the characters to choose from
-        std::string result = "";
-        for (int i = 0; i < length; i++)
-        {
-            int randomIndex = rand() % characters.length(); // generate a random index
-            result += characters[randomIndex];              // add the random character to the result string
-        }
-        return result;
-    }
     std::string remove_zero_chunked(std::string chunked_message)
     {
         size_t pos1 = chunked_message.find("\r\n");
@@ -206,7 +206,7 @@ namespace ws
             if (!a.empty())
             {
                 size_t lenght_body = atoi(a.c_str());
-                if ((lenght_body + 2 == body.length()))
+                if ((lenght_body + 2 == body.length()) || (req.Boundary && body.find("----------------------------"+ req.Boundary_token + "--") != std::string::npos))
                 {
                     req.body = body.substr(2);
                     if (req.Boundary)

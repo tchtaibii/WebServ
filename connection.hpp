@@ -5,11 +5,21 @@
 #define READ_N 1024
 namespace ws
 {
+    void change_socket(std::map<int, server> &fds_server, int fileD, int newSocket)
+    {
+        // std::map<int, server> new_fds;
+        server tmp = fds_server[fileD];
+        fds_server.erase(fileD);
+        fds_server.insert(std::make_pair(newSocket, tmp));
+    }
     std::map<int, server> ft_fds(std::vector<server> &servers)
     {
         std::map<int, server> fds;
         for (size_t i = 0; i < servers.size(); i++)
+        {
+            std::cout << servers[i].getSocket() << std::endl;
             fds.insert(std::make_pair(servers[i].getSocket(), servers[i]));
+        }
         return fds;
     }
     void connection_loop(std::vector<server> &servers)
@@ -49,6 +59,7 @@ namespace ws
                         fcntl(new_socket, F_SETFL, O_NONBLOCK);
                         FD_SET(new_socket, &readfds);
                         clients.push_back(new_socket);
+                        change_socket(fds_servers, fileD, new_socket);
                         if (new_socket > max)
                             max = new_socket;
                         continue;
@@ -122,7 +133,6 @@ namespace ws
                                     }
                                     else
                                     {
-                                        
                                         FD_SET(fileD, &writefds);
                                         FD_CLR(fileD, &readfds);
                                         httpRequestInit(req);
@@ -176,7 +186,9 @@ namespace ws
                         else if (FD_ISSET(fileD, &tmp_writefds))
                         {
                             std::cout << "hhshshshshhs*****" << std::endl;
+                            std::cout << fileD << std::endl;
                             server tmp_server = fds_servers[fileD];
+                            std::cout << tmp_server.get_port() << std::endl;
                             FD_CLR(fileD, &writefds);
                         }
                     }
