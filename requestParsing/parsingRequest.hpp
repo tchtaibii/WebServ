@@ -37,10 +37,10 @@ namespace ws
     }
     void httpRequestInit(HttpRequest &req)
     {
-        req.method = "";
-        req.path = "";
-        req.version = "";
-        req.headers.clear();
+        // req.method = "";
+        // req.path = "";
+        // req.version = "";
+        // req.headers.clear();
         req.body = "";
         req.chunked = 0;
         req.deja = 0;
