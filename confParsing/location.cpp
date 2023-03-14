@@ -59,3 +59,4 @@ void location::set_redirect(const std::map<std::string, std::string> &b)
 {
     this->redirect = b;
 }
+

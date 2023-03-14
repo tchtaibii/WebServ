@@ -22,7 +22,9 @@ namespace ws
         bool deja;
         bool con;
         bool end_;
-        HttpRequest() : chunked(false), deja(false), con(false), end_(false) {}
+        bool Boundary;
+        std::string Boundary_token;
+        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false) {}
     };
     // Parse the HTTP request string into an HttpRequest struct
     bool isZero(const std::string &httpRequest)
@@ -46,6 +48,7 @@ namespace ws
         req.deja = 0;
         req.con = 0;
         req.end_ = 0;
+        req.Boundary = 0;
     }
     HttpRequest parse_http_request(std::string tmp, HttpRequest &req)
     {
@@ -74,6 +77,14 @@ namespace ws
             }
             if (req.method == "POST")
                 req.body = tmp.substr(pos + 2);
+            std::ofstream file("body.d");
+            if (file.is_open())
+            {
+                file << req.body;
+                file.close();
+            }
+            if (req.headers["Content-Type"].find("boundary=--------------------------"))
+                req.Boundary = true;
             req.deja = true;
         }
         return req;
@@ -151,6 +162,10 @@ namespace ws
             std::string b = req.headers["Transfer-Encoding"];
             if (!a.empty())
             {
+                // if ()
+                // {
+
+                // }
                 size_t lenght_body = atoi(a.c_str());
                 if (lenght_body == body.length())
                 {

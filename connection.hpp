@@ -103,19 +103,27 @@ namespace ws
                                         if (req.con)
                                         {
                                             FD_SET(fileD, &writefds);
-									        FD_CLR(fileD, &readfds);
+                                            FD_CLR(fileD, &readfds);
                                             req.con = 0;
                                             continue;
                                         }
                                     }
+                                    else
+                                    {
+                                        FD_SET(fileD, &writefds);
+                                        FD_CLR(fileD, &readfds);
+                                        req.con = 0;
+                                        httpRequestInit(req);
+                                        continue;
+                                    }
                                 }
                                 // if the body is so small
-                                if (isZero(request_str) || (!req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length()))
+                                if ((req.method == "POST" && isZero(request_str)) || (req.method == "POST" && !req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length()))
                                 {
                                     tmp_body = remove_chunk_headers(tmp_body);
                                     req.con = bodyParsing(req, tmp_body, 1);
                                     FD_SET(fileD, &writefds);
-									FD_CLR(fileD, &readfds);
+                                    FD_CLR(fileD, &readfds);
                                     req.con = 0;
                                     continue;
                                 }
@@ -127,7 +135,7 @@ namespace ws
                                 close(fileD);
                                 FD_CLR(fileD, &readfds);
                                 max = *std::max_element(clients.begin(), clients.end());
-                                continue ;
+                                continue;
                                 // Clear the req.body buffer for the next request
                                 // int errorFlag = is_req_well_formed(req);
                                 // if (!errorFlag)
@@ -152,7 +160,7 @@ namespace ws
                         }
                         else
                         {
-                            std::cout << "hhshshshshhs*****" << std::endl; 
+                            std::cout << "hhshshshshhs*****" << std::endl;
                             server tmp_server = fds_servers[fileD];
                             FD_CLR(fileD, &writefds);
                         }
