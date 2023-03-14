@@ -113,11 +113,13 @@ namespace ws
     {
         size_t pos1 = chunked_message.find("\r\n");
         if (pos1 == std::string::npos)
-            return chunked_message;;
+            return chunked_message;
+        ;
         std::string tmp = chunked_message.substr(pos1 + 2);
         size_t pos = tmp.find("0\r\n");
         if (pos == std::string::npos)
-            return chunked_message;;
+            return chunked_message;
+        ;
         chunked_message = chunked_message.replace(pos1, 5, "");
         return chunked_message;
     }

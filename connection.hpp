@@ -20,24 +20,28 @@ namespace ws
         std::vector<int> clients;
         HttpRequest req;
         fd_set readfds;
+        fd_set writefds;
         int max = 0;
         int new_socket;
         FD_ZERO(&readfds);
+        FD_ZERO(&writefds);
         for (std::map<int, server>::iterator it = fds_servers.begin(); it != fds_servers.end(); it++)
         {
             fds.push_back(it->first);
             FD_SET(it->first, &readfds);
+            FD_SET(it->first, &writefds);
             if (it->first > max)
                 max = it->first;
         }
         while (1)
         {
             fd_set tmp_readfds = readfds;
-            if (select(max + 1, &tmp_readfds, NULL, NULL, NULL) < 0)
+            fd_set tmp_writefds = writefds;
+            if (select(max + 1, &tmp_readfds, &tmp_writefds, NULL, NULL) < 0)
                 throw std::runtime_error("Select error");
             for (int fileD = 0; fileD <= max; fileD++)
             {
-                if (FD_ISSET(fileD, &tmp_readfds))
+                if (FD_ISSET(fileD, &tmp_readfds) || FD_ISSET(fileD, &tmp_writefds))
                 {
                     if (std::count(fds.begin(), fds.end(), fileD))
                     {
@@ -47,96 +51,105 @@ namespace ws
                         clients.push_back(new_socket);
                         if (new_socket > max)
                             max = new_socket;
+                        continue;
                     }
                     else
                     {
-                        char buffer[READ_N] = {0};
-                        int valread = recv(fileD, buffer, READ_N, 0);
-                        if (valread < 0)
+                        if (FD_ISSET(fileD, &tmp_readfds))
                         {
-                            clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
-                            fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
-                            close(fileD);
-                            FD_CLR(fileD, &readfds);
-                            max = *std::max_element(clients.begin(), clients.end());
-                        }
-                        else if (valread > 0)
-                        {
-                            std::string request_str = std::string(buffer, valread);
-                            std::cout << request_str;
-                            // req.end_ = isZero(request_str);
-                            // bool end_with_0 = 0;
-                            if (!req.deja)
+                            char buffer[READ_N] = {0};
+                            int valread = recv(fileD, buffer, READ_N, 0);
+                            if (valread < 0)
                             {
-                                req = parse_http_request(request_str, req);
-                                tmp_body = req.body;
-                                req.body = "";
-                                // request_str = "";
-                                // std::cout << "Method: " << req.method << std::endl;
-                                // std::cout << "Path: " << req.path << std::endl;
-                                // std::cout << "Version: " << req.version << std::endl;
-                                // std::cout << "Headers:" << std::endl;
-                                // for (std::map<std::string, std::string>::iterator it = req.headers.begin(); it != req.headers.end(); it++)
-                                //     std::cout << "  " << it->first << ": " << it->second << std::endl;
-                                // std::cout << "body : " << std::endl;
+                                clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
+                                fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
+                                close(fileD);
+                                FD_CLR(fileD, &readfds);
+                                max = *std::max_element(clients.begin(), clients.end());
                             }
-                            else
+                            else if (valread > 0)
                             {
-                                // std::cout << tmp_body << std::endl;
-                                if (!req.con && req.method == "POST")
+                                std::string request_str = std::string(buffer, valread);
+                                std::cout << request_str;
+                                // req.end_ = isZero(request_str);
+                                // bool end_with_0 = 0;
+                                if (!req.deja)
                                 {
-                                    if (req.chunked == true)
+                                    req = parse_http_request(request_str, req);
+                                    tmp_body = req.body;
+                                    req.body = "";
+                                    // request_str = "";
+                                    // std::cout << "Method: " << req.method << std::endl;
+                                    // std::cout << "Path: " << req.path << std::endl;
+                                    // std::cout << "Version: " << req.version << std::endl;
+                                    // std::cout << "Headers:" << std::endl;
+                                    // for (std::map<std::string, std::string>::iterator it = req.headers.begin(); it != req.headers.end(); it++)
+                                    //     std::cout << "  " << it->first << ": " << it->second << std::endl;
+                                    // std::cout << "body : " << std::endl;
+                                }
+                                else
+                                {
+                                    // std::cout << tmp_body << std::endl;
+                                    if (!req.con && req.method == "POST")
                                     {
-                                        req.end_ = isZero(request_str);
-                                        tmp_body = remove_chunk_headers(tmp_body);
-                                    }
-                                    tmp_body += request_str;
-                                    request_str = "";
-                                    req.con = bodyParsing(req, tmp_body, req.end_);
-                                    if (req.con)
-                                    {
-                                        req.con = 0;
+                                        if (req.chunked == true)
+                                        {
+                                            req.end_ = isZero(request_str);
+                                            tmp_body = remove_chunk_headers(tmp_body);
+                                        }
+                                        tmp_body += request_str;
+                                        request_str = "";
+                                        req.con = bodyParsing(req, tmp_body, req.end_);
+                                        if (req.con)
+                                        {
+                                            FD_SET(fileD, &tmp_writefds);
+									        FD_CLR(fileD, &tmp_readfds);
+                                            req.con = 0;
+                                        }
                                     }
                                 }
-                                else{
-                                    
+                                // if the body is so small
+                                if (isZero(request_str) || (!req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length()))
+                                {
+                                    tmp_body = remove_chunk_headers(tmp_body);
+                                    req.con = bodyParsing(req, tmp_body, 1);
+                                    FD_SET(fileD, &tmp_writefds);
+									FD_CLR(fileD, &tmp_readfds);
+                                    req.con = 0;
                                 }
                             }
-                            // if the body is so small
-                            if (isZero(request_str) || (!req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length() ))
+                            else if (valread == 0)
                             {
-                                tmp_body = remove_chunk_headers(tmp_body);
-                                req.con = bodyParsing(req, tmp_body, 1);
-                                req.con = 0;
-                            }
-                        }
-                        else if (valread == 0)
-                        {
-                            clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
-                            fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
-                            close(fileD);
-                            FD_CLR(fileD, &readfds);
-                            max = *std::max_element(clients.begin(), clients.end());
-                            // Clear the req.body buffer for the next request
-                            // int errorFlag = is_req_well_formed(req);
-                            // if (!errorFlag)
-                            // {
+                                clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
+                                fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
+                                close(fileD);
+                                FD_CLR(fileD, &readfds);
+                                max = *std::max_element(clients.begin(), clients.end());
+                                // Clear the req.body buffer for the next request
+                                // int errorFlag = is_req_well_formed(req);
+                                // if (!errorFlag)
+                                // {
                                 // If the request is well-formed, process it
                                 // ...
                                 // After processing the request, send a response back to the client
                                 // std::string response_str = generate_http_response(req);
                                 // send(fileD, response_str.c_str(), response_str.length(), 0);
-                            // }
-                            // else
-                            // {
-                            //     // If the request is not well-formed, send a 400 Bad Request response back to the client
+                                // }
+                                // else
+                                // {
+                                //     // If the request is not well-formed, send a 400 Bad Request response back to the client
                                 // std::string response_str = "HTTP/1.1 400 Bad Request\r\n\r\n";
                                 // send(fileD, response_str.c_str(), response_str.length(), 0);
-                            // }
+                                // }
+                            }
+                            else
+                            {
+                                throw std::runtime_error("Read error");
+                            }
                         }
-                        else
+                        else // FD_ISSET(fileD, &tmp_writefds)
                         {
-                            throw std::runtime_error("Read error");
+                            server tmp_server = fds_servers[fileD];
                         }
                     }
                 }
