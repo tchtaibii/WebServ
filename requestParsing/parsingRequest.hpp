@@ -205,7 +205,12 @@ namespace ws
                         std::map<std::string, std::string> boundary_files = boundaryParsing(body.substr(2), req);
                         for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                         {
-                            
+                            std::ofstream file(it->first);
+                            if (file.is_open())
+                            {
+                                file << it->second;
+                                file.close();
+                            }
                         }
                         
                         
