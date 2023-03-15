@@ -88,6 +88,7 @@ namespace ws
                                     req = parse_http_request(request_str, req, request_im);
                                     if (!req.headers_complet)
                                         continue;
+                                    request_im = "";
                                     tmp_body = req.body;
                                     req.body = "";
                                     if (req.method != "POST")
@@ -121,6 +122,7 @@ namespace ws
                                     }
                                     else
                                     {
+                                        request_im = "";
                                         FD_SET(fileD, &writefds);
                                         FD_CLR(fileD, &readfds);
                                         // httpRequestInit(req);
@@ -136,11 +138,13 @@ namespace ws
                                     FD_SET(fileD, &writefds);
                                     FD_CLR(fileD, &readfds);
                                     req.con = 0;
+                                    request_im = "";
                                     continue;
                                 }
                             }
                             else if (valread == 0)
                             {
+                                request_im = "";
                                 clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
                                 fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
                                 close(fileD);
@@ -166,11 +170,13 @@ namespace ws
                             }
                             else
                             {
+                                request_im = "";
                                 throw std::runtime_error("Read error");
                             }
                         }
                         else if (FD_ISSET(fileD, &tmp_writefds))
                         {
+                            request_im = "";
                             std::cout << "hhshshshshhs*****" << std::endl;
                             std::cout << fileD << std::endl;
                             server tmp_server = fds_servers[fileD];
