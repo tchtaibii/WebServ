@@ -27,7 +27,8 @@ namespace ws
         bool end_;
         bool Boundary;
         std::string Boundary_token;
-        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false) {}
+        bool headers_complet;
+        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false) {}
     };
     std::string randomString(int length)
     {
@@ -97,6 +98,7 @@ namespace ws
         req.con = 0;
         req.end_ = 0;
         req.Boundary = 0;
+        req.headers_complet = false;
     }
 
     bool isHexadecimal(std::string str)
@@ -258,11 +260,17 @@ namespace ws
         }
         return false;
     }
-    HttpRequest parse_http_request(std::string tmp, HttpRequest &req)
+    HttpRequest parse_http_request(std::string tmp, HttpRequest &req, std::string &request_im)
     {
-        // std::string tmp(request_str);
-        if (!req.deja)
+        if (tmp.find("\r\n\r\n") == std::string::npos && !req.headers_complet)
         {
+            request_im += tmp;
+        }
+        else if (!req.deja)
+        {
+            request_im += tmp;
+            tmp = request_im;
+            req.headers_complet = true;
             size_t pos = tmp.find("\r\n\r\n");
             std::string header_tmp = tmp.substr(0, pos);
             // Split the request string into lines
@@ -283,7 +291,6 @@ namespace ws
                 std::string header_value = line.substr(tmp_pos + 2);
                 req.headers.insert(make_pair(header_name, header_value));
             }
-
             if (req.method == "POST")
             {
                 req.body = tmp.substr(pos + 2);
@@ -306,9 +313,9 @@ namespace ws
                     req.chunked = true;
             }
             // std::cout << "hadddi salaat" << std::endl;
-
             req.deja = true;
         }
         return req;
+        
     }
 }

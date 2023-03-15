@@ -5,20 +5,6 @@
 #define READ_N 2048
 namespace ws
 {
-    std::string read_line(int socket)
-    {
-        std::string line;
-        char c = '\0';
-        while (c != '\n')
-        {
-            recv(socket, &c, 1, 0);
-            if (c != '\r')
-            {
-                line += c;
-            }
-        }
-        return line;
-    }
     void change_socket(std::map<int, server> &fds_server, int fileD, int newSocket)
     {
         server tmp = fds_server[fileD];
@@ -40,6 +26,7 @@ namespace ws
         std::map<int, server> fds_servers = ft_fds(servers);
         std::vector<int> fds;
         std::string tmp_body = "";
+        std::string request_im = "";
         std::vector<int> clients;
         HttpRequest req;
         fd_set readfds;
@@ -82,6 +69,7 @@ namespace ws
                         if (FD_ISSET(fileD, &tmp_readfds))
                         {
                             char buffer[READ_N] = {0};
+
                             int valread = recv(fileD, buffer, READ_N, 0);
                             if (valread < 0)
                             {
@@ -97,7 +85,9 @@ namespace ws
                                 std::cout << request_str;
                                 if (!req.deja)
                                 {
-                                    req = parse_http_request(request_str, req);
+                                    req = parse_http_request(request_str, req, request_im);
+                                    if (!req.headers_complet)
+                                        continue;
                                     tmp_body = req.body;
                                     req.body = "";
                                     if (req.method != "POST")
