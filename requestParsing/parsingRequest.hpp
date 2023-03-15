@@ -20,6 +20,7 @@ namespace ws
         std::string version;
         std::map<std::string, std::string> headers;
         std::string body;
+        // int read;
         bool chunked;
         bool deja;
         bool con;
@@ -28,7 +29,7 @@ namespace ws
         std::string Boundary_token;
         HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false) {}
     };
-        std::string randomString(int length)
+    std::string randomString(int length)
     {
         srand(time(NULL));                                                                               // seed the random number generator with the current time
         std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.$@*"; // the characters to choose from
@@ -97,6 +98,166 @@ namespace ws
         req.end_ = 0;
         req.Boundary = 0;
     }
+
+    bool isHexadecimal(std::string str)
+    {
+        // Iterate over each character in the string
+        for (size_t i = 0; i < str.length(); i++)
+        {
+            if (isxdigit(str[i]))
+                continue;
+            else
+                return false;
+        }
+        return true;
+    }
+    std::string remove_zero_chunked(std::string chunked_message)
+    {
+        // size_t pos1 = chunked_message.find("\r\n");
+        // if (pos1 == std::string::npos)
+        //     return chunked_message;
+        // std::string tmp = chunked_message.substr(pos1 + 2);
+        size_t pos = chunked_message.find("\r\n0\r\n");
+        if (pos == std::string::npos)
+            return chunked_message;
+        chunked_message = chunked_message.erase(pos, 5);
+        return chunked_message;
+    }
+    std::string remove_chunk_coding(std::string chunked_message)
+    {
+        // size_t i = 0;
+        // while (chunked_message[i])
+        // {
+        //     if (chunked_message[i] == '\r' && chunked_message[i + 1] == '\n')
+        //     {
+        //         std::string tmp = chunked_message.substr(i + 2);
+        //         size_t j = 0;
+        //         while (tmp[j])
+        //         {
+        //             if (tmp[j] == '\r' && tmp[j + 1] == '\r')
+        //                 break;
+        //             j++;
+        //         }
+        //         if (j == tmp.length())
+        //             return chunked_message;
+        //         tmp = tmp.substr(0, j);
+        //         if (isHexadecimal(tmp) && tmp.length() <= 6)
+        //         {
+        //             tmp = "\r\n" + tmp + "\r\n";
+        //             chunked_message = chunked_message.erase(i, tmp.length());
+        //             // return remove_chunk_coding(chunked_message);
+        //         }
+        //     }
+        //     i++;
+        // }
+        size_t pos1 = chunked_message.find("\r\n");
+        if (pos1 == std::string::npos)
+            return chunked_message;
+        std::string tmp = chunked_message.substr(pos1 + 2);
+        size_t pos = tmp.find("\r\n");
+        if (pos == std::string::npos)
+            return chunked_message;
+        tmp = tmp.substr(0, pos);
+        // std::cout << "waaaaa si zbi" << std::endl;
+        // std::cout << tmp << std::endl;
+        if (isHexadecimal(tmp))
+        {
+            tmp = "\r\n" + tmp + "\r\n";
+            chunked_message = chunked_message.erase(pos1, tmp.length());
+            return remove_chunk_coding(chunked_message);
+        }
+        return chunked_message;
+    }
+
+    bool bodyParsing(HttpRequest &req, std::string &body, bool the_end)
+    {
+        if (req.method == "POST")
+        {
+            std::string a = req.headers["Content-Length"];
+            std::string b = req.headers["Transfer-Encoding"];
+            if (!a.empty())
+            {
+                size_t lenght_body = atoi(a.c_str());
+                if ((lenght_body + 2 == body.length()) || (req.Boundary && body.find("----------------------------" + req.Boundary_token + "--") != std::string::npos))
+                {
+                    req.body = body.substr(2);
+                    if (req.Boundary)
+                    {
+                        req.deja = false;
+                        std::map<std::string, std::string> boundary_files = boundaryParsing(req.body, req);
+                        for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
+                        {
+                            std::string tmp = it->first + "tmp";
+                            std::ofstream file(tmp);
+                            if (file.is_open())
+                            {
+                                file << it->second;
+                                file.close();
+                            }
+                        }
+                        // httpRequestInit(req);
+                        return true;
+                    }
+                    else
+                    {
+                        req.deja = false;
+                        std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
+                        std::ofstream file(randomString(5) + "." + extension);
+                        if (file.is_open())
+                        {
+                            file << req.body;
+                            file.close();
+                        }
+                        // httpRequestInit(req);
+                        return true;
+                    }
+                }
+                else
+                    return false;
+            }
+            else if (req.chunked) // chunked
+            {
+                if (the_end)
+                {
+                    // if (req.Boundary)
+                    // {
+                    //     req.deja = false;
+                    //     req.body = body.substr(2);
+                    //     std::map<std::string, std::string> boundary_files = boundaryParsing(req.body, req);
+                    //     for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
+                    //     {
+                    //         it->second = remove_chunk_coding(it->second, req);
+                    //         it->second = remove_zero_chunked(it->second);
+                    //         std::string tmp = it->first + "tmp";
+                    //         std::ofstream file(tmp);
+                    //         if (file.is_open())
+                    //         {
+                    //             file << it->second;
+                    //             file.close();
+                    //         }
+                    //     }
+                    //     httpRequestInit(req);
+                    //     return true;
+                    // }
+                    // body = remove_chunk_coding(body);
+                    // body = remove_chunk_coding(body);
+                    body = remove_zero_chunked(body);
+                    req.body = body.substr(0, body.length() - 2);
+                    std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
+                    std::ofstream file(randomString(5) + "." + extension);
+                    if (file.is_open())
+                    {
+                        file << req.body;
+                        file.close();
+                    }
+                    // httpRequestInit(req);
+                    return true;
+                }
+                return false;
+            }
+        }
+        return false;
+    }
     HttpRequest parse_http_request(std::string tmp, HttpRequest &req)
     {
         // std::string tmp(request_str);
@@ -126,6 +287,7 @@ namespace ws
             if (req.method == "POST")
             {
                 req.body = tmp.substr(pos + 2);
+                req.body = remove_chunk_coding(req.body);
                 try
                 {
                     if (req.headers["Content-Type"].find("boundary=--------------------------"))
@@ -139,150 +301,14 @@ namespace ws
                 {
                     std::cerr << "" << '\n';
                 }
+                std::string b = req.headers["Transfer-Encoding"];
+                if (!b.empty() && "chunked\r" == b)
+                    req.chunked = true;
             }
             // std::cout << "hadddi salaat" << std::endl;
 
             req.deja = true;
         }
         return req;
-    }
-    bool isHexadecimal(std::string str)
-    {
-        // Iterate over each character in the string
-        for (size_t i = 0; i < str.length(); i++)
-        {
-            char c = toupper(str[i]);
-            if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'))
-            {
-                // Character is a valid hexadecimal digit
-                continue;
-            }
-            else
-            {
-                // Character is not a valid hexadecimal digit
-                return false;
-            }
-        }
-        return true;
-    }
-    std::string remove_zero_chunked(std::string chunked_message)
-    {
-        size_t pos1 = chunked_message.find("\r\n");
-        if (pos1 == std::string::npos)
-            return chunked_message;
-        std::string tmp = chunked_message.substr(pos1 + 2);
-        size_t pos = tmp.find("0\r\n");
-        if (pos == std::string::npos)
-            return chunked_message;
-        chunked_message = chunked_message.replace(pos1, 5, "");
-        return chunked_message;
-    }
-    std::string remove_chunk_headers(std::string chunked_message)
-    {
-        while (1)
-        {
-            size_t pos1 = chunked_message.find("\r\n");
-            if (pos1 == std::string::npos)
-                break;
-            std::string tmp = chunked_message.substr(pos1 + 2);
-            size_t pos = tmp.find("\r\n");
-            if (pos == std::string::npos)
-                break;
-            tmp = tmp.substr(0, pos);
-            if (isHexadecimal(tmp))
-            {
-                tmp = "\r\n" + tmp + "\r\n";
-                chunked_message = chunked_message.replace(pos1, tmp.length(), "");
-            }
-        }
-        return chunked_message;
-    }
-    bool bodyParsing(HttpRequest &req, std::string &body, bool the_end)
-    {
-        if (req.method == "POST")
-        {
-            std::string a = req.headers["Content-Length"];
-            std::string b = req.headers["Transfer-Encoding"];
-            if (!a.empty())
-            {
-                size_t lenght_body = atoi(a.c_str());
-                if ((lenght_body + 2 == body.length()) || (req.Boundary && body.find("----------------------------"+ req.Boundary_token + "--") != std::string::npos))
-                {
-                    req.body = body.substr(2);
-                    if (req.Boundary)
-                    {
-                        req.deja = false;
-                        std::map<std::string, std::string> boundary_files = boundaryParsing(req.body, req);
-                        for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
-                        {
-                            std::string tmp = it->first + "tmp";
-                            std::ofstream file(tmp);
-                            if (file.is_open())
-                            {
-                                file << it->second;
-                                file.close();
-                            }
-                        }
-                        httpRequestInit(req);
-                        return true;
-                    }
-                    else
-                    {
-                        req.deja = false;
-                        std::ofstream file(randomString(18));
-                        if (file.is_open())
-                        {
-                            file << req.body;
-                            file.close();
-                        }
-                        httpRequestInit(req);
-                        return true;
-                    }
-                }
-                else
-                    return false;
-            }
-            else if (!b.empty() && "chunked\r" == b) // chunked
-            {
-                req.chunked = true;
-                if (the_end)
-                {
-                    
-                    if (req.Boundary)
-                    {
-                        req.deja = false;
-                        req.body = body.substr(2);
-                        std::map<std::string, std::string> boundary_files = boundaryParsing(req.body, req);
-                        for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
-                        {
-                            it->second = remove_chunk_headers(it->second);
-                            it->second = remove_zero_chunked(it->second);
-                            std::string tmp = it->first + "tmp";
-                            std::ofstream file(tmp);
-                            if (file.is_open())
-                            {
-                                file << it->second;
-                                file.close();
-                            }
-                        }
-                        httpRequestInit(req);
-                        return true;
-                    }
-                    body = remove_chunk_headers(body);
-                    body = remove_zero_chunked(body);
-                    req.body = body.substr(0, body.length() - 2);
-                    std::ofstream file(randomString(18));
-                    if (file.is_open())
-                    {
-                        file << req.body;
-                        file.close();
-                    }
-                    httpRequestInit(req);
-                    return true;
-                }
-                return false;
-            }
-        }
-        return false;
     }
 }

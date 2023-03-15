@@ -2,12 +2,25 @@
 #include "Socket/socket.hpp"
 #include <fcntl.h>
 #include "requestParsing/checkRequest.hpp"
-#define READ_N 1024
+#define READ_N 2048
 namespace ws
 {
+    std::string read_line(int socket)
+    {
+        std::string line;
+        char c = '\0';
+        while (c != '\n')
+        {
+            recv(socket, &c, 1, 0);
+            if (c != '\r')
+            {
+                line += c;
+            }
+        }
+        return line;
+    }
     void change_socket(std::map<int, server> &fds_server, int fileD, int newSocket)
     {
-        // std::map<int, server> new_fds;
         server tmp = fds_server[fileD];
         fds_server.erase(fileD);
         fds_server.insert(std::make_pair(newSocket, tmp));
@@ -82,49 +95,34 @@ namespace ws
                             {
                                 std::string request_str = std::string(buffer, valread);
                                 std::cout << request_str;
-                                // req.end_ = isZero(request_str);
-                                // bool end_with_0 = 0;
                                 if (!req.deja)
                                 {
                                     req = parse_http_request(request_str, req);
                                     tmp_body = req.body;
                                     req.body = "";
-
-                                    // request_str = "";
-                                    // std::cout << "Method: " << req.method << std::endl;
-                                    // std::cout << "Path: " << req.path << std::endl;
-                                    // std::cout << "Version: " << req.version << std::endl;
-                                    // std::cout << "Headers:" << std::endl;
-                                    // for (std::map<std::string, std::string>::iterator it = req.headers.begin(); it != req.headers.end(); it++)
-                                    //     std::cout << "  " << it->first << ": " << it->second << std::endl;
-                                    // std::cout << "body : " << std::endl;
                                     if (req.method != "POST")
                                     {
                                         FD_SET(fileD, &writefds);
                                         FD_CLR(fileD, &readfds);
-                                        httpRequestInit(req);
-                                        // req.con = 0;
+                                        // httpRequestInit(req);
                                         continue;
                                     }
                                 }
                                 else
                                 {
-                                    
-                                    // std::cout << tmp_body << std::endl;
                                     if (!req.con && req.method == "POST")
                                     {
-                                        if (req.chunked == true)
+                                        std::cout << "ici " << std::endl;
+                                        if (req.chunked)
                                         {
                                             req.end_ = isZero(request_str);
-                                            if(!req.Boundary)
-                                                tmp_body = remove_chunk_headers(tmp_body);
+                                            request_str = remove_chunk_coding(request_str);
                                         }
                                         tmp_body += request_str;
                                         request_str = "";
                                         req.con = bodyParsing(req, tmp_body, req.end_);
                                         if (req.con)
                                         {
-
                                             FD_SET(fileD, &writefds);
                                             FD_CLR(fileD, &readfds);
                                             req.con = 0;
@@ -135,8 +133,7 @@ namespace ws
                                     {
                                         FD_SET(fileD, &writefds);
                                         FD_CLR(fileD, &readfds);
-                                        httpRequestInit(req);
-                                        // req.con = 0;
+                                        // httpRequestInit(req);
                                         continue;
                                     }
                                 }
@@ -144,7 +141,7 @@ namespace ws
                                 if ((req.method == "POST" && isZero(request_str)) || (req.method == "POST" && !req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length()))
                                 {
                                     if (req.chunked)
-                                        tmp_body = remove_chunk_headers(tmp_body);
+                                        tmp_body = remove_chunk_coding(tmp_body);
                                     req.con = bodyParsing(req, tmp_body, 1);
                                     FD_SET(fileD, &writefds);
                                     FD_CLR(fileD, &readfds);
@@ -154,7 +151,6 @@ namespace ws
                             }
                             else if (valread == 0)
                             {
-
                                 clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
                                 fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
                                 close(fileD);
@@ -189,7 +185,11 @@ namespace ws
                             std::cout << fileD << std::endl;
                             server tmp_server = fds_servers[fileD];
                             std::cout << tmp_server.get_port() << std::endl;
+                            httpRequestInit(req);
                             FD_CLR(fileD, &writefds);
+                            FD_CLR(fileD, &readfds);
+                            FD_CLR(fileD, &tmp_writefds);
+                            FD_CLR(fileD, &tmp_readfds);
                         }
                     }
                 }
