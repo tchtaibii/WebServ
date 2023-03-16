@@ -9,6 +9,8 @@
 #include <ctime>
 #include <fstream>
 #include <stdlib.h>
+#include <iomanip>
+#include <sys/time.h>
 
 namespace ws
 {
@@ -28,7 +30,10 @@ namespace ws
         bool Boundary;
         std::string Boundary_token;
         bool headers_complet;
-        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false) {}
+        bool length_chunk;
+        int chunked_need;
+        std::string chunked_tmp;
+        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false), length_chunk(false), chunked_need(0), chunked_tmp("") {}
     };
     std::string randomString(int length)
     {
@@ -42,22 +47,36 @@ namespace ws
         }
         return result;
     }
-    // Parse the HTTP request string into an HttpRequest struct
+    std::string getCurrentDateTime()
+    {
+        // Get the current time
+        time_t now = time(0);
+        struct tm tstruct;
+        char buf[80];
+
+        tstruct = *localtime(&now);
+        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tstruct);
+
+        // Get the current milliseconds
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+
+        // Convert the time to a string
+        std::ostringstream oss;
+        oss << buf << "." << std::setfill('0') << std::setw(3) << tv.tv_usec / 1000;
+        return oss.str();
+    }
     bool isZero(const std::string &httpRequest)
     {
         size_t pos = httpRequest.find("\r\n0\r\n\r\n");
         if (pos != std::string::npos)
-        {
-            // std::cout << "dkhlaaaat f zero" << std::endl;
             return 1;
-        }
         return 0;
     }
     size_t countSubstring(const std::string &str, const std::string &sub)
     {
         size_t count = 0;
         size_t pos = str.find(sub);
-
         while (pos != std::string::npos)
         {
             count++;
@@ -99,11 +118,12 @@ namespace ws
         req.end_ = 0;
         req.Boundary = 0;
         req.headers_complet = false;
+        req.length_chunk = false;
+        req.chunked_tmp = "";
     }
 
     bool isHexadecimal(std::string str)
     {
-        // Iterate over each character in the string
         for (size_t i = 0; i < str.length(); i++)
         {
             if (isxdigit(str[i]))
@@ -113,64 +133,14 @@ namespace ws
         }
         return true;
     }
-    std::string remove_zero_chunked(std::string chunked_message)
+    void remove_zero_chunked(std::string &chunked_message)
     {
-        // size_t pos1 = chunked_message.find("\r\n");
-        // if (pos1 == std::string::npos)
-        //     return chunked_message;
-        // std::string tmp = chunked_message.substr(pos1 + 2);
         size_t pos = chunked_message.find("\r\n0\r\n");
         if (pos == std::string::npos)
-            return chunked_message;
+            return;
         chunked_message = chunked_message.erase(pos, 5);
-        return chunked_message;
+        return;
     }
-    std::string remove_chunk_coding(std::string chunked_message)
-    {
-        // size_t i = 0;
-        // while (chunked_message[i])
-        // {
-        //     if (chunked_message[i] == '\r' && chunked_message[i + 1] == '\n')
-        //     {
-        //         std::string tmp = chunked_message.substr(i + 2);
-        //         size_t j = 0;
-        //         while (tmp[j])
-        //         {
-        //             if (tmp[j] == '\r' && tmp[j + 1] == '\r')
-        //                 break;
-        //             j++;
-        //         }
-        //         if (j == tmp.length())
-        //             return chunked_message;
-        //         tmp = tmp.substr(0, j);
-        //         if (isHexadecimal(tmp) && tmp.length() <= 6)
-        //         {
-        //             tmp = "\r\n" + tmp + "\r\n";
-        //             chunked_message = chunked_message.erase(i, tmp.length());
-        //             // return remove_chunk_coding(chunked_message);
-        //         }
-        //     }
-        //     i++;
-        // }
-        size_t pos1 = chunked_message.find("\r\n");
-        if (pos1 == std::string::npos)
-            return chunked_message;
-        std::string tmp = chunked_message.substr(pos1 + 2);
-        size_t pos = tmp.find("\r\n");
-        if (pos == std::string::npos)
-            return chunked_message;
-        tmp = tmp.substr(0, pos);
-        // std::cout << "waaaaa si zbi" << std::endl;
-        // std::cout << tmp << std::endl;
-        if (isHexadecimal(tmp))
-        {
-            tmp = "\r\n" + tmp + "\r\n";
-            chunked_message = chunked_message.erase(pos1, tmp.length());
-            return remove_chunk_coding(chunked_message);
-        }
-        return chunked_message;
-    }
-
     bool bodyParsing(HttpRequest &req, std::string &body, bool the_end)
     {
         if (req.method == "POST")
@@ -197,20 +167,18 @@ namespace ws
                                 file.close();
                             }
                         }
-                        // httpRequestInit(req);
                         return true;
                     }
                     else
                     {
                         req.deja = false;
                         std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
-                        std::ofstream file(randomString(5) + "." + extension);
+                        std::ofstream file(getCurrentDateTime() + "." + extension);
                         if (file.is_open())
                         {
                             file << req.body;
                             file.close();
                         }
-                        // httpRequestInit(req);
                         return true;
                     }
                 }
@@ -221,44 +189,63 @@ namespace ws
             {
                 if (the_end)
                 {
-                    // if (req.Boundary)
-                    // {
-                    //     req.deja = false;
-                    //     req.body = body.substr(2);
-                    //     std::map<std::string, std::string> boundary_files = boundaryParsing(req.body, req);
-                    //     for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
-                    //     {
-                    //         it->second = remove_chunk_coding(it->second, req);
-                    //         it->second = remove_zero_chunked(it->second);
-                    //         std::string tmp = it->first + "tmp";
-                    //         std::ofstream file(tmp);
-                    //         if (file.is_open())
-                    //         {
-                    //             file << it->second;
-                    //             file.close();
-                    //         }
-                    //     }
-                    //     httpRequestInit(req);
-                    //     return true;
-                    // }
-                    // body = remove_chunk_coding(body);
-                    // body = remove_chunk_coding(body);
-                    body = remove_zero_chunked(body);
-                    req.body = body.substr(0, body.length() - 2);
+                    req.body = req.body.substr(0, body.length() - 2);
                     std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
-                    std::ofstream file(randomString(5) + "." + extension);
+                    std::ofstream file(getCurrentDateTime() + "." + extension);
                     if (file.is_open())
                     {
                         file << req.body;
                         file.close();
                     }
-                    // httpRequestInit(req);
                     return true;
                 }
                 return false;
             }
         }
         return false;
+    }
+    void remove_chunk_coding(std::string chunked_message, HttpRequest &req)
+    {
+        if (req.chunked_tmp != "")
+            chunked_message = req.chunked_tmp + chunked_message;
+        req.end_ = isZero(chunked_message);
+        if (req.chunked_need != 0)
+        {
+            req.body += chunked_message.substr(0, req.chunked_need);
+            req.chunked_need = 0;
+            chunked_message = chunked_message.substr(req.chunked_need);
+            if (req.end_)
+            {
+                remove_zero_chunked(chunked_message);
+                req.body += chunked_message;
+                req.chunked_tmp = "";
+                req.con = bodyParsing(req, req.body, 1);
+                return;
+            }
+        }
+        size_t pos1 = chunked_message.find("\r\n");
+        if (pos1 == std::string::npos)
+            return;
+        std::string tmp = chunked_message.substr(pos1 + 2);
+        size_t pos = tmp.find("\r\n");
+        if (pos == std::string::npos)
+            return;
+        tmp = tmp.substr(0, pos);
+        if (isHexadecimal(tmp))
+        {
+            size_t hex_ = strtol(tmp.c_str(), NULL, 16);
+            std::string ok = "\r\n" + tmp + "\r\n";
+            req.chunked_tmp = chunked_message.substr(pos1 + ok.length(), hex_);
+            size_t len = req.chunked_tmp.length();
+            req.length_chunk = (len != (size_t)strtol(tmp.c_str(), NULL, 16)) ? false : true;
+            req.chunked_need = (!req.length_chunk) ? hex_ - len : 0;
+            req.body += req.chunked_tmp;
+            req.chunked_tmp = chunked_message.substr(chunked_message.find(req.chunked_tmp) + len);
+            chunked_message = "";
+        }
+        if (req.end_)
+            req.con = bodyParsing(req, req.body, 1);
+        return;
     }
     HttpRequest parse_http_request(std::string tmp, HttpRequest &req, std::string &request_im)
     {
@@ -273,7 +260,6 @@ namespace ws
             req.headers_complet = true;
             size_t pos = tmp.find("\r\n\r\n");
             std::string header_tmp = tmp.substr(0, pos);
-            // Split the request string into lines
             std::stringstream ss(header_tmp);
             std::string line;
             getline(ss, line); // First line is the request line
@@ -294,7 +280,6 @@ namespace ws
             if (req.method == "POST")
             {
                 req.body = tmp.substr(pos + 2);
-                req.body = remove_chunk_coding(req.body);
                 try
                 {
                     if (req.headers["Content-Type"].find("boundary=--------------------------"))
@@ -310,12 +295,15 @@ namespace ws
                 }
                 std::string b = req.headers["Transfer-Encoding"];
                 if (!b.empty() && "chunked\r" == b)
+                {
                     req.chunked = true;
+                    std::string tmp_tmp = req.body;
+                    req.body = "";
+                    remove_chunk_coding(tmp_tmp, req);
+                }
             }
-            // std::cout << "hadddi salaat" << std::endl;
             req.deja = true;
         }
         return req;
-        
     }
 }

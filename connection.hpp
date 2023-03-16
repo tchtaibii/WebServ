@@ -2,7 +2,7 @@
 #include "Socket/socket.hpp"
 #include <fcntl.h>
 #include "requestParsing/checkRequest.hpp"
-#define READ_N 2048
+#define READ_N 65536
 namespace ws
 {
     void change_socket(std::map<int, server> &fds_server, int fileD, int newSocket)
@@ -78,6 +78,7 @@ namespace ws
                                 close(fileD);
                                 FD_CLR(fileD, &readfds);
                                 max = *std::max_element(clients.begin(), clients.end());
+                                tmp_body = "";
                             }
                             else if (valread > 0)
                             {
@@ -86,32 +87,27 @@ namespace ws
                                 if (!req.deja)
                                 {
                                     req = parse_http_request(request_str, req, request_im);
+                                    // req.body = "";
                                     if (!req.headers_complet)
                                         continue;
                                     request_im = "";
                                     tmp_body = req.body;
-                                    req.body = "";
-                                    if (req.method != "POST")
-                                    {
-                                        FD_SET(fileD, &writefds);
-                                        FD_CLR(fileD, &readfds);
-                                        // httpRequestInit(req);
-                                        continue;
-                                    }
                                 }
                                 else
                                 {
                                     if (!req.con && req.method == "POST")
                                     {
-                                        std::cout << "ici " << std::endl;
                                         if (req.chunked)
                                         {
-                                            req.end_ = isZero(request_str);
-                                            request_str = remove_chunk_coding(request_str);
+                                            remove_chunk_coding(request_str, req);
+                                            request_str = "";
                                         }
-                                        tmp_body += request_str;
-                                        request_str = "";
-                                        req.con = bodyParsing(req, tmp_body, req.end_);
+                                        else
+                                        {
+                                            tmp_body += request_str;
+                                            request_str = "";
+                                            req.con = bodyParsing(req, tmp_body, req.end_);
+                                        }
                                         if (req.con)
                                         {
                                             FD_SET(fileD, &writefds);
@@ -125,7 +121,6 @@ namespace ws
                                         request_im = "";
                                         FD_SET(fileD, &writefds);
                                         FD_CLR(fileD, &readfds);
-                                        // httpRequestInit(req);
                                         continue;
                                     }
                                 }
@@ -133,18 +128,20 @@ namespace ws
                                 if ((req.method == "POST" && isZero(request_str)) || (req.method == "POST" && !req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length()))
                                 {
                                     if (req.chunked)
-                                        tmp_body = remove_chunk_coding(tmp_body);
+                                        remove_chunk_coding(tmp_body, req);
                                     req.con = bodyParsing(req, tmp_body, 1);
                                     FD_SET(fileD, &writefds);
                                     FD_CLR(fileD, &readfds);
                                     req.con = 0;
                                     request_im = "";
+                                    tmp_body = "";
                                     continue;
                                 }
                             }
                             else if (valread == 0)
                             {
                                 request_im = "";
+                                tmp_body = "";
                                 clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
                                 fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
                                 close(fileD);
@@ -177,6 +174,7 @@ namespace ws
                         else if (FD_ISSET(fileD, &tmp_writefds))
                         {
                             request_im = "";
+                            tmp_body = "";
                             std::cout << "hhshshshshhs*****" << std::endl;
                             std::cout << fileD << std::endl;
                             server tmp_server = fds_servers[fileD];
