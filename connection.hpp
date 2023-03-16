@@ -78,7 +78,7 @@ namespace ws
                                 close(fileD);
                                 FD_CLR(fileD, &readfds);
                                 max = *std::max_element(clients.begin(), clients.end());
-                                tmp_body = "";
+                                httpRequestInit(req, 0);
                             }
                             else if (valread > 0)
                             {
@@ -99,6 +99,7 @@ namespace ws
                                     {
                                         if (req.chunked)
                                         {
+                                            // req.end_ = isZero(request_str);
                                             remove_chunk_coding(request_str, req);
                                             request_str = "";
                                         }
@@ -125,14 +126,14 @@ namespace ws
                                     }
                                 }
                                 // if the body is so small
-                                if ((req.method == "POST" && isZero(request_str)) || (req.method == "POST" && !req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length()))
+                                if ((req.method == "POST" && !req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length()))
                                 {
                                     if (req.chunked)
-                                        remove_chunk_coding(tmp_body, req);
+                                        remove_chunk_coding(request_str, req);
                                     req.con = bodyParsing(req, tmp_body, 1);
                                     FD_SET(fileD, &writefds);
                                     FD_CLR(fileD, &readfds);
-                                    req.con = 0;
+                                    httpRequestInit(req, 0);
                                     request_im = "";
                                     tmp_body = "";
                                     continue;
@@ -140,8 +141,7 @@ namespace ws
                             }
                             else if (valread == 0)
                             {
-                                request_im = "";
-                                tmp_body = "";
+                                httpRequestInit(req, 0);
                                 clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
                                 fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
                                 close(fileD);
@@ -168,6 +168,7 @@ namespace ws
                             else
                             {
                                 request_im = "";
+                                httpRequestInit(req, 1);
                                 throw std::runtime_error("Read error");
                             }
                         }
@@ -179,7 +180,7 @@ namespace ws
                             std::cout << fileD << std::endl;
                             server tmp_server = fds_servers[fileD];
                             std::cout << tmp_server.get_port() << std::endl;
-                            httpRequestInit(req);
+                            httpRequestInit(req, 1);
                             FD_CLR(fileD, &writefds);
                             FD_CLR(fileD, &readfds);
                             FD_CLR(fileD, &tmp_writefds);

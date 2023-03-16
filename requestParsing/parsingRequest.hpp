@@ -104,12 +104,15 @@ namespace ws
         }
         return boundary_files;
     }
-    void httpRequestInit(HttpRequest &req)
+    void httpRequestInit(HttpRequest &req, bool all)
     {
-        req.method = "";
-        req.path = "";
-        req.version = "";
-        req.headers.clear();
+        if (all)
+        {
+            req.method = "";
+            req.path = "";
+            req.version = "";
+            req.headers.clear();
+        }
         req.body = "";
         req.Boundary_token = "";
         req.chunked = 0;
@@ -120,6 +123,7 @@ namespace ws
         req.headers_complet = false;
         req.length_chunk = false;
         req.chunked_tmp = "";
+        req.chunked_need = 0;
     }
 
     bool isHexadecimal(std::string str)
@@ -166,6 +170,7 @@ namespace ws
                                 file << it->second;
                                 file.close();
                             }
+                            httpRequestInit(req, 0);
                         }
                         return true;
                     }
@@ -179,6 +184,7 @@ namespace ws
                             file << req.body;
                             file.close();
                         }
+                        httpRequestInit(req, 0);
                         return true;
                     }
                 }
@@ -189,7 +195,7 @@ namespace ws
             {
                 if (the_end)
                 {
-                    req.body = req.body.substr(0, body.length() - 2);
+                    req.body = req.body.substr(0, body.length());
                     std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
                     std::ofstream file(getCurrentDateTime() + "." + extension);
                     if (file.is_open())
@@ -197,6 +203,7 @@ namespace ws
                         file << req.body;
                         file.close();
                     }
+                    httpRequestInit(req, 0);
                     return true;
                 }
                 return false;
