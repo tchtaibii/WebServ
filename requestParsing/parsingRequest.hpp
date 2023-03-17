@@ -33,13 +33,13 @@ namespace ws
         bool length_chunk;
         int chunked_need;
         std::string chunked_tmp;
-        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false), length_chunk(false), chunked_need(0), chunked_tmp("") {}
+        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false), length_chunk(false), chunked_need(0){}
     };
     std::string randomString(int length)
     {
         srand(time(NULL));                                                                               // seed the random number generator with the current time
         std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.$@*"; // the characters to choose from
-        std::string result = "";
+        std::string result;
         for (int i = 0; i < length; i++)
         {
             int randomIndex = rand() % characters.length(); // generate a random index
@@ -108,13 +108,13 @@ namespace ws
     {
         if (all)
         {
-            req.method = "";
-            req.path = "";
-            req.version = "";
+            req.method.clear();
+            req.path.clear();
+            req.version.clear();
             req.headers.clear();
         }
-        req.body = "";
-        req.Boundary_token = "";
+        req.body.clear();
+        req.Boundary_token.clear();
         req.chunked = 0;
         req.deja = 0;
         req.con = 0;
@@ -122,7 +122,7 @@ namespace ws
         req.Boundary = 0;
         req.headers_complet = false;
         req.length_chunk = false;
-        req.chunked_tmp = "";
+        req.chunked_tmp.clear();
         req.chunked_need = 0;
     }
 
@@ -211,21 +211,22 @@ namespace ws
         }
         return false;
     }
-    void remove_chunk_coding(std::string chunked_message, HttpRequest &req)
+    void remove_chunk_coding(std::string &chunked_message, HttpRequest &req)
     {
-        if (req.chunked_tmp != "")
-            chunked_message = req.chunked_tmp + chunked_message;
+        if (!req.chunked_tmp.empty())
+            chunked_message = req.chunked_tmp.substr(0, req.chunked_tmp.length()) + chunked_message.substr(0, chunked_message.length());
         req.end_ = isZero(chunked_message);
         if (req.chunked_need != 0)
         {
             req.body += chunked_message.substr(0, req.chunked_need);
-            req.chunked_need = 0;
             chunked_message = chunked_message.substr(req.chunked_need);
+            req.chunked_need = 0;
             if (req.end_)
             {
-                remove_zero_chunked(chunked_message);
-                req.body += chunked_message;
-                req.chunked_tmp = "";
+                std::cout << "tara salat" << std::endl;
+                // remove_zero_chunked(chunked_message);
+                req.body += chunked_message.substr(0, chunked_message.length());
+                req.chunked_tmp.clear();
                 req.con = bodyParsing(req, req.body, 1);
                 return;
             }
@@ -248,7 +249,7 @@ namespace ws
             req.chunked_need = (!req.length_chunk) ? hex_ - len : 0;
             req.body += req.chunked_tmp;
             req.chunked_tmp = chunked_message.substr(chunked_message.find(req.chunked_tmp) + len);
-            chunked_message = "";
+            chunked_message.clear();
         }
         if (req.end_)
             req.con = bodyParsing(req, req.body, 1);
@@ -262,8 +263,8 @@ namespace ws
         }
         else if (!req.deja)
         {
-            request_im += tmp;
-            tmp = request_im;
+            request_im += tmp.substr(0, tmp.length());
+            tmp = request_im.substr(0, request_im.length());
             req.headers_complet = true;
             size_t pos = tmp.find("\r\n\r\n");
             std::string header_tmp = tmp.substr(0, pos);
@@ -304,8 +305,8 @@ namespace ws
                 if (!b.empty() && "chunked\r" == b)
                 {
                     req.chunked = true;
-                    std::string tmp_tmp = req.body;
-                    req.body = "";
+                    std::string tmp_tmp = req.body.substr(0, req.body.length());
+                    req.body.clear();
                     remove_chunk_coding(tmp_tmp, req);
                 }
             }

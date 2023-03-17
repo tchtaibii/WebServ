@@ -25,8 +25,8 @@ namespace ws
     {
         std::map<int, server> fds_servers = ft_fds(servers);
         std::vector<int> fds;
-        std::string tmp_body = "";
-        std::string request_im = "";
+        std::string tmp_body;
+        std::string request_im;
         std::vector<int> clients;
         HttpRequest req;
         fd_set readfds;
@@ -87,10 +87,10 @@ namespace ws
                                 if (!req.deja)
                                 {
                                     req = parse_http_request(request_str, req, request_im);
-                                    // req.body = "";
+                                    // req.body.clear();
                                     if (!req.headers_complet)
                                         continue;
-                                    request_im = "";
+                                    request_im.clear();
                                     tmp_body = req.body;
                                 }
                                 else
@@ -101,12 +101,12 @@ namespace ws
                                         {
                                             // req.end_ = isZero(request_str);
                                             remove_chunk_coding(request_str, req);
-                                            request_str = "";
+                                            request_str.clear();
                                         }
                                         else
                                         {
                                             tmp_body += request_str;
-                                            request_str = "";
+                                            request_str.clear();
                                             req.con = bodyParsing(req, tmp_body, req.end_);
                                         }
                                         if (req.con)
@@ -119,7 +119,7 @@ namespace ws
                                     }
                                     else
                                     {
-                                        request_im = "";
+                                        request_im.clear();
                                         FD_SET(fileD, &writefds);
                                         FD_CLR(fileD, &readfds);
                                         continue;
@@ -134,8 +134,8 @@ namespace ws
                                     FD_SET(fileD, &writefds);
                                     FD_CLR(fileD, &readfds);
                                     httpRequestInit(req, 0);
-                                    request_im = "";
-                                    tmp_body = "";
+                                    request_im.clear();
+                                    tmp_body.clear();
                                     continue;
                                 }
                             }
@@ -167,16 +167,16 @@ namespace ws
                             }
                             else
                             {
-                                request_im = "";
+                                request_im.clear();
                                 httpRequestInit(req, 1);
                                 throw std::runtime_error("Read error");
                             }
                         }
                         else if (FD_ISSET(fileD, &tmp_writefds))
                         {
-                            request_im = "";
-                            tmp_body = "";
-                            std::cout << "hhshshshshhs*****" << std::endl;
+                            request_im.clear();
+                            tmp_body.clear();
+                            // std::cout << "hhshshshshhs*****" << std::endl;
                             std::cout << fileD << std::endl;
                             server tmp_server = fds_servers[fileD];
                             std::cout << tmp_server.get_port() << std::endl;
