@@ -1,7 +1,7 @@
 #pragma once
 #include "Socket/socket.hpp"
 #include <fcntl.h>
-#include "requestParsing/checkRequest.hpp"
+#include "Request/checkRequest.hpp"
 #define READ_N 2048
 namespace ws
 {
@@ -16,10 +16,7 @@ namespace ws
     {
         std::map<int, server> fds;
         for (size_t i = 0; i < servers.size(); i++)
-        {
-            //std::cout << servers[i].getSocket() << std::endl;
             fds.insert(std::make_pair(servers[i].getSocket(), servers[i]));
-        }
         return fds;
     }
     void connection_loop(std::vector<server> &servers)
@@ -84,13 +81,9 @@ namespace ws
                             else if (valread > 0)
                             {
                                 std::string request_str = std::string(buffer, valread);
-                                std::cout << "sizeof : " << request_str.length() << std::endl;
-                                
-                                // std::cout << request_str;
                                 if (!req.deja)
                                 {
                                     req = parse_http_request(request_str, req, request_im);
-                                    // req.body.clear();
                                     if (!req.headers_complet)
                                         continue;
                                     request_im.clear();
@@ -102,9 +95,10 @@ namespace ws
                                     {
                                         if (req.chunked)
                                         {
-                                            // req.end_ = isZero(request_str);
-                                            remove_chunk_coding(request_str, req);
-                                            request_str = "";
+                                            req.end_ = isZero(request_str);
+                                            chunked_uncoding(request_str, req);
+                                            request_str.clear();
+                                            req.con = bodyParsing(req, tmp_body, req.end_);
                                         }
                                         else
                                         {
@@ -149,22 +143,6 @@ namespace ws
                                 FD_CLR(fileD, &readfds);
                                 max = *std::max_element(clients.begin(), clients.end());
                                 continue;
-                                // Clear the req.body buffer for the next request
-                                // int errorFlag = is_req_well_formed(req);
-                                // if (!errorFlag)
-                                // {
-                                // If the request is well-formed, process it
-                                // ...
-                                // After processing the request, send a response back to the client
-                                // std::string response_str = generate_http_response(req);
-                                // send(fileD, response_str.c_str(), response_str.length(), 0);
-                                // }
-                                // else
-                                // {
-                                //     // If the request is not well-formed, send a 400 Bad Request response back to the client
-                                // std::string response_str = "HTTP/1.1 400 Bad Request\r\n\r\n";
-                                // send(fileD, response_str.c_str(), response_str.length(), 0);
-                                // }
                             }
                             else
                             {
@@ -175,12 +153,7 @@ namespace ws
                         }
                         else if (FD_ISSET(fileD, &tmp_writefds))
                         {
-                            request_im = "";
-                            tmp_body = "";
-                            std::cout << "hhshshshshhs*****" << std::endl;
-                            std::cout << fileD << std::endl;
                             server tmp_server = fds_servers[fileD];
-                            //std::cout << tmp_server.get_port() << std::endl;
                             httpRequestInit(req, 1);
                             FD_CLR(fileD, &writefds);
                             FD_CLR(fileD, &readfds);
@@ -195,7 +168,6 @@ namespace ws
 
     void socketStart(std::vector<server> &servers)
     {
-        //std::cout << "Start..." << std::endl;
 
         Socket sockets; // initialize of sockets (multiple sockets) by how many server we have
 

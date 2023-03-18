@@ -18,8 +18,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <cstring>
-#include "../requestParsing/parsingRequest.hpp"
-#include "../confParsing/parsingConf.hpp"
+#include "../Request/parsingRequest.hpp"
+#include "../Config/parsingConf.hpp"
 
 namespace ws
 {

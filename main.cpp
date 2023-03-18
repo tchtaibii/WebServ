@@ -1,6 +1,6 @@
-#include "./Socket/socket.hpp"
-#include "./confParsing/parsingConf.hpp"
-#include "./connection.hpp"
+#include "Socket/socket.hpp"
+#include "Config/parsingConf.hpp"
+#include "Connection.hpp"
 
 int main(int ac, char **av)
 {

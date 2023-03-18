@@ -1,5 +1,5 @@
 FLAGS = -Wall -Wextra -Werror
-SRC = confParsing/*.cpp main.cpp
+SRC = Config/*.cpp main.cpp
 CC = c++
 
 all : server 
@@ -17,6 +17,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "chunked is complet" && git push origin webserv 
+	git add . && git commit -m "clean code" && git push origin webserv 
 
 re: fclean all
