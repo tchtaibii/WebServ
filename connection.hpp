@@ -68,7 +68,6 @@ namespace ws
                         {
                             char buffer[READ_N] = {0};
                             int valread = recv(fileD, buffer, READ_N, 0);
-                            req.valread = valread;
                             if (valread < 0)
                             {
                                 clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());

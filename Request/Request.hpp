@@ -1,10 +1,7 @@
 #pragma once
 #include "tools.hpp"
-#include "boundary.hpp"
-#include "Chunked.hpp"
 namespace ws
 {
-    // struct of http request
     struct HttpRequest
     {
         std::string method;
@@ -21,6 +18,11 @@ namespace ws
         bool headers_complet;
         HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false){}
     };
+}
+#include "boundary.hpp"
+#include "Chunked.hpp"
+namespace ws
+{
     void httpRequestInit(HttpRequest &req, bool all)
     {
         if (all)
@@ -39,7 +41,6 @@ namespace ws
         req.Boundary = 0;
         req.headers_complet = false;
     }
-    
     
     bool bodyParsing(HttpRequest &req, std::string &body, bool the_end)
     {
