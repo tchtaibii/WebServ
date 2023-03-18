@@ -1,6 +1,6 @@
 #pragma once
 #include "tools.hpp"
-#include "parsingRequest.hpp"
+#include "Request.hpp"
 namespace ws
 {
     bool isZero(const std::string &httpRequest)
