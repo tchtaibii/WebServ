@@ -17,7 +17,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "chunked is handle" && git push origin webserv 
-
+	git add . && git commit -m "chunked is complet" && git push origin webserv 
 
 re: fclean all
