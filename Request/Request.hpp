@@ -53,6 +53,8 @@ namespace ws
                 size_t lenght_body = atoi(a.c_str());
                 if ((lenght_body + 2 == body.length()))
                 {
+                    std::cerr << body.substr(2);
+                    std::cout << "|" << req.Boundary_token << "|" << std::endl;
                     if (req.Boundary && body.find("----------------------------" + req.Boundary_token + "--") != std::string::npos)
                     {
                         std::cout << "boundary enter" << std::endl;

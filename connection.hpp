@@ -79,7 +79,7 @@ namespace ws
                             else if (valread > 0)
                             {
                                 std::string request_str = std::string(buffer, valread);
-                                std::cout << request_str;
+                                std::cerr << request_str;
                                 if (!req.deja)
                                 {
                                     req = parse_http_request(request_str, req, request_im);
@@ -87,6 +87,14 @@ namespace ws
                                         continue;
                                     request_im.clear();
                                     tmp_body = req.body;
+                                    req.deja = true;
+                                    if (req.method != "POST")
+                                    {
+                                        FD_SET(fileD, &writefds);
+                                        FD_CLR(fileD, &readfds);
+                                        httpRequestInit(req, 0);
+                                        continue;
+                                    }
                                 }
                                 else
                                 {
@@ -113,13 +121,6 @@ namespace ws
                                             continue;
                                         }
                                     }
-                                    else
-                                    {
-                                        request_im.clear();
-                                        FD_SET(fileD, &writefds);
-                                        FD_CLR(fileD, &readfds);
-                                        continue;
-                                    }
                                 }
                                 // if the body is so small
                                 // if ((req.method == "POST" && !req.headers["Content-Length"].empty() && (size_t)atoi(req.headers["Content-Length"].c_str()) == tmp_body.length()))
@@ -135,7 +136,7 @@ namespace ws
                             }
                             else if (valread == 0)
                             {
-                                httpRequestInit(req, 0);
+                                httpRequestInit(req, 1);
                                 clients.erase(std::remove(clients.begin(), clients.end(), fileD), clients.end());
                                 fds.erase(std::remove(fds.begin(), fds.end(), fileD), fds.end());
                                 close(fileD);
@@ -150,10 +151,10 @@ namespace ws
                                 throw std::runtime_error("Read error");
                             }
                         }
-                        else if (FD_ISSET(fileD, &tmp_writefds))
+                        else
                         {
-                            std::cout << "bhhdgdgsgcd" << std::endl;
                             server tmp_server = fds_servers[fileD];
+                            std::cout << tmp_server.get_port() << std::endl;
                             httpRequestInit(req, 1);
                             FD_CLR(fileD, &writefds);
                             FD_CLR(fileD, &readfds);
