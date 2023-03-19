@@ -9,13 +9,19 @@ namespace ws
         size_t count = countSubstring(body, "----------------------------" + req.Boundary_token) - 1;
         for (size_t i = 0; i < count; i++)
         {
-            size_t pos = body.find("filename=");
             std::string fileName;
-            if (pos != std::string::npos)
-                fileName = body.substr(pos + 10);
+            size_t pos = body.find("name=\"\"");
+            if (body[pos + 7] == ';')
+            {
+                pos = body.find("filename=");
+                if (pos != std::string::npos)
+                {
+                    fileName = body.substr(pos + 10);
+                    fileName = fileName.substr(0, fileName.find("\"\r\n"));
+                }
+            }
             else
-                fileName = req.Boundary_token + " (" + randomString(1) + ")";
-            fileName = fileName.substr(0, fileName.find("\"\r\n"));
+                fileName = getCurrentDateTime() + ".txt";
             body = body.substr(body.find("\r\n\r\n") + 2);
             std::string tmp = body.substr(2, body.find("----------------------------" + req.Boundary_token) - 4);
             body = body.substr(body.find(tmp) + tmp.length());

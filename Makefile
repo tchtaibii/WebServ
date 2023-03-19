@@ -17,6 +17,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "fix boundary" && git push origin main 
+	git add . && git commit -m "fix boundary with text" && git push origin webserv 
 
 re: fclean all

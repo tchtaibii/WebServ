@@ -17,7 +17,7 @@ namespace ws
     std::string randomString(int length)
     {
         srand(time(NULL));                                                                               // seed the random number generator with the current time
-        std::string characters = "123456789"; // the characters to choose from
+        std::string characters = "ABCDEF123456789"; // the characters to choose from
         std::string result;
         for (int i = 0; i < length; i++)
         {
@@ -32,7 +32,7 @@ namespace ws
         struct tm tstruct;
         char buf[80];
         tstruct = *localtime(&now);
-        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tstruct);
+        strftime(buf, sizeof(buf), "%Y-%m-%d-%H-%M-%S", &tstruct);
         struct timeval tv;
         gettimeofday(&tv, NULL);
         std::ostringstream oss;
