@@ -17,7 +17,7 @@ namespace ws
     std::string randomString(int length)
     {
         srand(time(NULL));                                                                               // seed the random number generator with the current time
-        std::string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.$@*"; // the characters to choose from
+        std::string characters = "123456789"; // the characters to choose from
         std::string result;
         for (int i = 0; i < length; i++)
         {

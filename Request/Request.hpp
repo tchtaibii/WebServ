@@ -51,17 +51,19 @@ namespace ws
             if (!a.empty())
             {
                 size_t lenght_body = atoi(a.c_str());
-                if ((lenght_body + 2 == body.length()) || (req.Boundary && body.find("----------------------------" + req.Boundary_token + "--") != std::string::npos))
+                if ((lenght_body + 2 == body.length()))
                 {
-                    req.body = body.substr(2);
-                    if (req.Boundary)
+                    if (req.Boundary && body.find("----------------------------" + req.Boundary_token + "--") != std::string::npos)
                     {
+                        std::cout << "boundary enter" << std::endl;
                         req.deja = false;
                         std::map<std::string, std::string> boundary_files = boundaryParsing(req.body, req);
                         for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                         {
-                            std::string tmp = it->first + "tmp";
+                            std::string tmp = it->first;
                             std::ofstream file(tmp);
+                            if (file)
+                                tmp += " (" + randomString(1) + ")";
                             if (file.is_open())
                             {
                                 file << it->second;
@@ -73,6 +75,7 @@ namespace ws
                     }
                     else
                     {
+                        req.body = body.substr(2);
                         req.deja = false;
                         std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
                         std::ofstream file(getCurrentDateTime() + "." + extension);

@@ -14,7 +14,7 @@ namespace ws
             if (pos != std::string::npos)
                 fileName = body.substr(pos + 10);
             else
-                fileName = req.Boundary_token + randomString(1);
+                fileName = req.Boundary_token + " (" + randomString(1) + ")";
             fileName = fileName.substr(0, fileName.find("\"\r\n"));
             body = body.substr(body.find("\r\n\r\n") + 2);
             std::string tmp = body.substr(2, body.find("----------------------------" + req.Boundary_token) - 4);
