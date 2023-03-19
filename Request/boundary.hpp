@@ -6,8 +6,8 @@ namespace ws
     std::map<std::string, std::string> boundaryParsing(std::string body, HttpRequest &req)
     {
         std::map<std::string, std::string> boundary_files;
-        size_t count = countSubstring(body, "----------------------------" + req.Boundary_token);
-        for (size_t i = 0; i < count - 1; i++)
+        size_t count = countSubstring(body, "----------------------------" + req.Boundary_token) - 1;
+        for (size_t i = 0; i < count; i++)
         {
             size_t pos = body.find("filename=");
             std::string fileName;

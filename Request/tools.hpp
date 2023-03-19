@@ -46,7 +46,7 @@ namespace ws
         while (pos != std::string::npos)
         {
             count++;
-            pos = str.find(sub, pos + sub.length());
+            pos = str.find(sub, pos + 52);
         }
         return count;
     }

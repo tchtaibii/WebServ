@@ -16,7 +16,7 @@ namespace ws
         bool Boundary;
         std::string Boundary_token;
         bool headers_complet;
-        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false){}
+        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false) {}
     };
 }
 #include "boundary.hpp"
@@ -41,7 +41,7 @@ namespace ws
         req.Boundary = 0;
         req.headers_complet = false;
     }
-    
+
     bool bodyParsing(HttpRequest &req, std::string &body, bool the_end)
     {
         if (req.method == "POST")
@@ -53,13 +53,10 @@ namespace ws
                 size_t lenght_body = atoi(a.c_str());
                 if ((lenght_body + 2 == body.length()))
                 {
-                    std::cerr << body.substr(2);
-                    std::cout << "|" << req.Boundary_token << "|" << std::endl;
-                    if (req.Boundary && body.find("----------------------------" + req.Boundary_token + "--") != std::string::npos)
+                    size_t p = body.find("----------------------------" + req.Boundary_token + "--");
+                    if (req.Boundary && p != std::string::npos)
                     {
-                        std::cout << "boundary enter" << std::endl;
-                        req.deja = false;
-                        std::map<std::string, std::string> boundary_files = boundaryParsing(req.body, req);
+                        std::map<std::string, std::string> boundary_files = boundaryParsing(body, req);
                         for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                         {
                             std::string tmp = it->first;
