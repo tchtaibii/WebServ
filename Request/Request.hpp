@@ -60,9 +60,7 @@ namespace ws
                         for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                         {
                             std::string tmp = it->first;
-                            std::ofstream file(tmp);
-                            if (file)
-                                tmp += " (" + randomString(1) + ")";
+                            std::ofstream file("./Assets/uploads/" + tmp);
                             if (file.is_open())
                             {
                                 file << it->second;
@@ -77,7 +75,7 @@ namespace ws
                         req.body = body.substr(2);
                         req.deja = false;
                         std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
-                        std::ofstream file(getCurrentDateTime() + "." + extension);
+                        std::ofstream file("./Assets/uploads/" + getCurrentDateTime() + "." + extension);
                         if (file.is_open())
                         {
                             file << req.body;
@@ -96,7 +94,7 @@ namespace ws
                 {
                     verifyChunk(req.body);
                     std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
-                    std::ofstream file(getCurrentDateTime() + "." + extension);
+                    std::ofstream file("./Assets/uploads/" + getCurrentDateTime() + "." + extension);
                     if (file.is_open())
                     {
                         file << req.body;
