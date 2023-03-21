@@ -14,6 +14,13 @@
 #include <sys/time.h>
 namespace ws
 {
+    std::string readFileToString(const char *filename)
+    {
+        std::ifstream infile(filename);
+        std::stringstream buffer;
+        buffer << infile.rdbuf();
+        return buffer.str();
+    }
     std::string randomString(int length)
     {
         srand(time(NULL));                                                                               // seed the random number generator with the current time
