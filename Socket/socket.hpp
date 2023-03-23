@@ -92,7 +92,6 @@ namespace ws
             for (size_t n = pathComponents.size(); n > 0; n--) // check if one of the pathComponents is exiting on the server(location)
             {
                 it = Location.find(pathComponents[n - 1]);
-                std::cout << "skchhh" << std::endl;
                 if (it != Location.end())
                     return it;
             }
@@ -105,35 +104,6 @@ namespace ws
                     return true;
             return false;
         }
-        // void ft_accept(server servers)
-        // {
-        //     int valread;
-        //     int addrlen = sizeof(address);
-        //     int statusCode;
-        //     while (1)
-        //     {
-        //         new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen); // new FD that take the request
-        //         test_connection(new_socket);
-        //         char buffer[1024] = {0};
-        //         valread = read(new_socket, buffer, 30000); // reading the request from FD(new_socket) and stock it on buffer
-        //         write(new_socket, NULL, 1);
-        //         printf("------------------message sent-------------------\n");
-        //         std::cout << buffer << std::endl;
-        //         HttpRequest req = parse_http_request(buffer);                                                             // parsing the request
-        //         std::map<std::string, location>::iterator itLocation = locationChecker(req.path, servers.get_location()); // getting the location from the server
-        //         if (itLocation != servers.get_location().end())                                                           // check if the location is existing or not
-        //         {
-        //             if (methodChecker(req.method, itLocation->second.get_method())) // check if the method of request is existing on the location
-        //             {
-        //                 // response
-        //             }
-        //             else
-        //             {
-        //                 // error page
-        //             }
-        //         }
-        //     }
-        // }
         void test_connection(int itemToTest)
         {
             if (itemToTest < 0)

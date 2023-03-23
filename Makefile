@@ -6,7 +6,6 @@ all : server
 
 server : $(SRC_CLIENT)
 	@$(CC) $(FLAGS) $(SRC) -o webserv
-	@tput setaf 2; echo "Server IS READY"
 	@./webserv conf.conf
 
 

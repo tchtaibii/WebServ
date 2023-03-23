@@ -17,13 +17,7 @@ class response
 				setDirheader();
 			if (status != 200 && status != 301)
 				get_path(status);
-			// if (check_cgi())
-			// {
-
-			// }
-			// std::cout << file_path << std::endl;
 			std::ostringstream oss;
-			std::cout << status << std::endl;
 			oss << req.version + response_message(status);
 			oss << "Date: " << getCurrentDate() << "\r\n";
 			if (status == 301)
@@ -41,7 +35,6 @@ class response
 			}
 			oss << "\r\n";
 			this->response_header = oss.str();
-			std::cout << response_header;
         }
     private :
 		void	setDirheader()
@@ -90,7 +83,6 @@ class response
 			if (file.find_last_of('.') != std::string::npos)
 			{
 				std::string tmp = file.substr(file.find_last_of('.'), file.length());
-				std::cout << tmp << std::endl;
 				if (tmp == ".html")
 					return "text/html";
 				if (tmp == ".css")

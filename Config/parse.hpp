@@ -98,10 +98,8 @@ namespace ws
 			this->path = file;
 			if (fileExists(file))
 			{
-				std::cout << " file does exist \n";
 				if (is_directory(file))
 				{
-					std::cout << "directory \n";
 					if (req.path.back() != '/')
 						status = 301;
 					else if (access(file.c_str(), R_OK) || this->_location[req.path].get_autoindex() == "off")
@@ -189,23 +187,17 @@ namespace ws
 		{
 			std::map<std::string, location> l = this->get_location();
 			std::map<std::string, location>::iterator it = locationChecker(req.path, l);
-			std::cout << "location = " << it->first << std::endl;
 			// if (!methodChecker(req.method, l[it->first].get_method()))
 			// 	status = 405;
 			// if (status == 405)
 			// 	exit(1);
-			std::cout << "_checker was good\n";
 			if (req.method == "GET" && !status)
-			{
-				std::cout << "inside get \n";
 				getMethod(it->first);
-			}
 			// else if (req.method == "POST" && !status)
 			//     status =  PostMethod();
 			// else if (req.method == "DELETE" && !status)
 			//     status = DeleteMethod();
 			// _response = _response();
-			std::cout << "staus = " << status << std::endl;
 			// std::cout << req.path << std::endl;
 			// return responseFunction(req.path, req, status);
 		}
@@ -223,7 +215,6 @@ namespace ws
 				send(this->socket, _response.response_header.c_str(), _response.response_header.length(), 0);
 				if (!dir && status != 301)
 					fd = open(_response.file_path.c_str(), O_RDONLY);
-				std::cout << "=-=-=file = " << _response.file_path << "   " << this->socket << " fd  = " << fd << std::endl;
 				this->_response.done = false;
 			}
 			if (dir || status == 301)
@@ -247,13 +238,11 @@ namespace ws
 			}
 			try 
 			{
-				// std::cout << buffer << std::endl;
 				i += send(this->socket, buffer, sizeof(buffer), 0);
-				std::cout << "=-=--=-=- " << i << std::endl;
 			}
 			catch (...)
 			{
-				std::cout << "a\n";
+				std::cerr << "a\n";
 			}
 		}
 	};
