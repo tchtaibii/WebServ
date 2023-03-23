@@ -1,5 +1,5 @@
 FLAGS = -Wall -Wextra -Werror
-SRC = Config/*.cpp main.cpp
+SRC = main.cpp
 CC = c++
 
 all : server 
@@ -17,6 +17,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "fix some tkhrbi9" && git push origin webserv 
+	git add . && git commit -m "merge complet" && git push origin webserv 
 
 re: fclean all

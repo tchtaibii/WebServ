@@ -4,7 +4,7 @@
 
 int main(int ac, char **av)
 {
-    std::vector<server> servers = ConfingParsing(ac, av);
+    std::vector<ws::server> servers = ConfingParsing(ac, av);
     ws::socketStart(servers);
     return 0;
 }

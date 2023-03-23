@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <sstream>
+#include <sys/stat.h>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -23,7 +24,7 @@ namespace ws
     }
     std::string randomString(int length)
     {
-        srand(time(NULL));                                                                               // seed the random number generator with the current time
+        srand(time(NULL));                          // seed the random number generator with the current time
         std::string characters = "ABCDEF123456789"; // the characters to choose from
         std::string result;
         for (int i = 0; i < length; i++)
@@ -79,5 +80,25 @@ namespace ws
                 return false;
         }
         return true;
+    }
+    std::string pathjoin(std::string root, std::string &path)
+    {
+        std::string r;
+        r = root + path.substr(1);
+        return r;
+    }
+
+    bool fileExists(const std::string &filename)
+    {
+        struct stat buffer;
+        return (stat(filename.c_str(), &buffer) == 0);
+    }
+
+    bool is_directory(const std::string &path)
+    {
+        struct stat status;
+        if (stat(path.c_str(), &status) == 0)
+            return (status.st_mode & S_IFDIR) != 0;
+        return false;
     }
 }

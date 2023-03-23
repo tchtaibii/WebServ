@@ -8,9 +8,10 @@ namespace ws
     void change_socket(std::map<int, server> &fds_server, int fileD, int newSocket)
     {
         server tmp = fds_server[fileD];
-        fds_server.erase(fileD);
         fds_server.insert(std::make_pair(newSocket, tmp));
+        fds_server[newSocket].setSocket(newSocket);
     }
+
     std::map<int, server> ft_fds(std::vector<server> &servers)
     {
         std::map<int, server> fds;
@@ -18,6 +19,7 @@ namespace ws
             fds.insert(std::make_pair(servers[i].getSocket(), servers[i]));
         return fds;
     }
+
     void connection_loop(std::vector<server> &servers)
     {
         std::map<int, server> fds_servers = ft_fds(servers);
@@ -65,7 +67,6 @@ namespace ws
                     {
                         if (FD_ISSET(fileD, &tmp_readfds))
                         {
-                            
                             char buffer[READ_N] = {0};
                             int valread = recv(fileD, buffer, READ_N, 0);
                             if (valread < 0)
@@ -85,6 +86,7 @@ namespace ws
                                     req = parse_http_request(request_str, req, request_im);
                                     if (!req.headers_complet)
                                         continue;
+                                    fds_servers[fileD].set_req(req);
                                     request_im.clear();
                                     tmp_body = req.body;
                                     req.deja = true;
@@ -105,7 +107,7 @@ namespace ws
                                             req.end_ = isZero(request_str);
                                             chunked_uncoding(request_str, req);
                                             request_str.clear();
-                                            req.con = bodyParsing(req, tmp_body, req.end_);
+                                            req.con = bodyParsing(req, tmp_body, req.end_, pathjoin(fds_servers[fileD].get_location()[req.path]));
                                         }
                                         else
                                         {
@@ -116,7 +118,9 @@ namespace ws
                                         if (req.con)
                                         {
                                             FD_SET(fileD, &writefds);
+                                            FD_SET(fileD, &tmp_writefds);
                                             FD_CLR(fileD, &readfds);
+                                            FD_CLR(fileD, &tmp_readfds);
                                             req.con = 0;
                                             continue;
                                         }
@@ -140,14 +144,25 @@ namespace ws
                                 throw std::runtime_error("Read error");
                             }
                         }
-                        else
+                        else if (FD_ISSET(fileD, &tmp_writefds))
                         {
-                            server tmp_server = fds_servers[fileD];
-                            httpRequestInit(req, 1);
-                            FD_CLR(fileD, &writefds);
-                            FD_CLR(fileD, &readfds);
-                            FD_CLR(fileD, &tmp_writefds);
-                            FD_CLR(fileD, &tmp_readfds);
+                                if (!fds_servers[fileD].get_status())
+                                {
+                                    httpRequestInit(req, 1);
+                                    fds_servers[fileD].is_req_well_formed();
+                                    fds_servers[fileD].checker();
+                                }
+                                fds_servers[fileD].response();
+                                if (fds_servers[fileD].getDone())
+                                {
+                                    FD_CLR(fileD, &writefds);
+                                    FD_CLR(fileD, &readfds);
+                                    FD_CLR(fileD, &tmp_writefds);
+                                    FD_CLR(fileD, &tmp_readfds);
+                                    fds_servers.erase(fileD);
+                                    close(fileD);
+                                }
+                            // }
                         }
                     }
                 }

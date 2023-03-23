@@ -15,7 +15,7 @@ std::pair<std::string, std::string> split(std::string s)
     return std::make_pair(key, value);
 }
 
-server &   server_parse(server & s, const std::pair<std::string, std::string> &m,
+ws::server &   server_parse(ws::server & s, const std::pair<std::string, std::string> &m,
     std::map<std::string, std::string> &b)
 {
     if (m.first == "port")
@@ -37,7 +37,7 @@ server &   server_parse(server & s, const std::pair<std::string, std::string> &m
 	return s;
 }
 
-location & location_parse(std::pair<std::string, std::string> &m, location &l)
+ws::location & location_parse(std::pair<std::string, std::string> &m, ws::location &l)
 {
     if (m.first == "method")
     {
@@ -74,18 +74,18 @@ location & location_parse(std::pair<std::string, std::string> &m, location &l)
     return l;
 }
 
-std::vector<server> ConfingParsing(int ac, char **av)
+std::vector<ws::server> ConfingParsing(int ac, char **av)
 {
     if (ac != 2)
         exit(EXIT_FAILURE);
-    std::vector<server>                 _s;
-    server                              s;
+    std::vector<ws::server>                 _s;
+    ws::server                              s;
     std::ifstream                       ifs(av[1]);
     std::string                         line;
     std::pair<std::string, std::string> m;
     std::map<std::string, std::string>  b;
-    std::map<std::string, location>     _l;
-    location 							l;
+    std::map<std::string, ws::location>     _l;
+    ws::location 							l;
     std::string 						temp;
     size_t 								pos;
 
