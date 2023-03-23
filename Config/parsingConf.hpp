@@ -15,8 +15,8 @@ std::pair<std::string, std::string> split(std::string s)
     return std::make_pair(key, value);
 }
 
-ws::server &   server_parse(ws::server & s, const std::pair<std::string, std::string> &m,
-    std::map<std::string, std::string> &b)
+ws::server &server_parse(ws::server &s, const std::pair<std::string, std::string> &m,
+                         std::map<std::string, std::string> &b)
 {
     if (m.first == "port")
         s.set_port(m.second);
@@ -31,18 +31,21 @@ ws::server &   server_parse(ws::server & s, const std::pair<std::string, std::st
     else if (m.first == "cgi")
     {
         b.insert(std::make_pair(m.second.substr(0, m.second.find("/")),
-            m.second.substr(m.second.find("/"), m.second.length())));
+                                m.second.substr(m.second.find("/"), m.second.length())));
         s.set_cgi(b);
     }
-	return s;
+    return s;
 }
 
-ws::location & location_parse(std::pair<std::string, std::string> &m, ws::location &l)
+ws::location &location_parse(std::pair<std::string, std::string> &m, ws::location &l, std::string &PWD)
 {
+    size_t os = m.second.find("${PWD}");
+    if (os != std::string::npos)
+        m.second = m.second.replace(os, 6, PWD);
     if (m.first == "method")
     {
-		size_t                      pos;
-    	std::vector<std::string>    h;
+        size_t pos;
+        std::vector<std::string> h;
 
         pos = m.second.find("GET");
         if (pos != std::string::npos)
@@ -63,40 +66,38 @@ ws::location & location_parse(std::pair<std::string, std::string> &m, ws::locati
         l.set_default(m.second);
     else if (m.first == "upload")
         l.set_upload(m.second);
-	else if (m.first == "redirect")
-	{
-		std::map<std::string, std::string> p;
-		std::string first = m.second.substr(0, m.second.find("http"));
-		std::string second = m.second.substr(m.second.find("http"), m.second.length());
-		p.insert(std::make_pair(first, second));
-		l.set_redirect(p);
-	}
+    else if (m.first == "redirect")
+    {
+        std::map<std::string, std::string> p;
+        std::string first = m.second.substr(0, m.second.find("http"));
+        std::string second = m.second.substr(m.second.find("http"), m.second.length());
+        p.insert(std::make_pair(first, second));
+        l.set_redirect(p);
+    }
     return l;
 }
 
-std::vector<ws::server> ConfingParsing(int ac, char **av)
+std::vector<ws::server> ConfingParsing(char **av, std::string &PWD)
 {
-    if (ac != 2)
-        exit(EXIT_FAILURE);
-    std::vector<ws::server>                 _s;
-    ws::server                              s;
-    std::ifstream                       ifs(av[1]);
-    std::string                         line;
+    std::vector<ws::server> _s;
+    ws::server s;
+    std::ifstream ifs(av[1]);
+    std::string line;
     std::pair<std::string, std::string> m;
-    std::map<std::string, std::string>  b;
-    std::map<std::string, ws::location>     _l;
-    ws::location 							l;
-    std::string 						temp;
-    size_t 								pos;
+    std::map<std::string, std::string> b;
+    std::map<std::string, ws::location> _l;
+    ws::location l;
+    std::string temp;
+    size_t pos;
 
-	s.flg = false;
+    s.flg = false;
     while (std::getline(ifs, line))
     {
         pos = line.find("server");
         if (pos != std::string::npos && !s.flg)
         {
             s.flg = true;
-            while(std::getline(ifs, line) && s.flg)
+            while (std::getline(ifs, line) && s.flg)
             {
                 if (!line.empty())
                     m = split(line);
@@ -112,21 +113,15 @@ std::vector<ws::server> ConfingParsing(int ac, char **av)
                     while (std::getline(ifs, line) && l.flg)
                     {
                         m = split(line);
-                        l = location_parse(m, l);
+                        l = location_parse(m, l, PWD);
                         if (m.first == "]")
-						{
+                        {
                             l.flg = false;
-							break ;
-						}
+                            break;
+                        }
                     }
                     _l.insert(std::make_pair(temp, l));
                 }
-                // std::cout << line << std::endl;
-                // if (m.first.find('{'))
-                // {
-                //     write(2, "error '{'\n", 11);
-                //     exit(1);
-                // }
             }
             if (!b.empty())
             {
@@ -140,11 +135,6 @@ std::vector<ws::server> ConfingParsing(int ac, char **av)
             }
             _s.push_back(s);
         }
-        // else if (!line.find("server {") && s.flg)
-        // {
-        //     write(2, "error '{'\n", 11);
-        //     exit(1);
-        // }
     }
     return _s;
 }

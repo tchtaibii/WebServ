@@ -15,6 +15,22 @@
 #include <sys/time.h>
 namespace ws
 {
+    std::string get_PWD(char **env)
+    {
+        std::string tmp;
+        int i = -1;
+        while (env[++i])
+        {
+            if (env[i][0] == 'P')
+            {
+                tmp = env[i];
+                size_t pos = tmp.find("PWD=", 0, 3);
+                if (pos != std::string::npos)
+                    break;
+            }
+        }
+        return tmp.substr(4);
+    }
     std::string readFileToString(const char *filename)
     {
         std::ifstream infile(filename);
