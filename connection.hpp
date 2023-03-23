@@ -107,7 +107,7 @@ namespace ws
                                             req.end_ = isZero(request_str);
                                             chunked_uncoding(request_str, req);
                                             request_str.clear();
-                                            req.con = bodyParsing(req, tmp_body, req.end_, pathjoin(fds_servers[fileD].get_location()[req.path]));
+                                            req.con = bodyParsing(req, tmp_body, req.end_);
                                         }
                                         else
                                         {
