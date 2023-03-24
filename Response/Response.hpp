@@ -1,4 +1,6 @@
 #include <dirent.h>
+#include "../Request/tools.hpp"
+#include "../cgi/cgi.hpp"
 
 class response 
 {
@@ -7,16 +9,22 @@ class response
         bool		first_time;
 		std::string response_header;
 		std::string file_path;
+		std::string cgi_file_path;
 		std::string dir_body;
         void    set_header(std::string file, int status, ws::HttpRequest req, bool dir)
         {
-
 			this->first_time = true;
 			this->file_path = file;
 			if (dir && status != 301)
 				setDirheader();
 			if (status != 200 && status != 301)
 				get_path(status);
+			if (check_extension2(file_path))
+			{
+				cgi c(file_path);
+				c.exec();
+				cgi_file_path = c.get_outfile_path();
+			}
 			std::ostringstream oss;
 			oss << req.version + response_message(status);
 			oss << "Date: " << getCurrentDate() << "\r\n";
