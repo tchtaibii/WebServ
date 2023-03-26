@@ -98,7 +98,7 @@ namespace ws
                 if (the_end)
                 {
                     verifyChunk(req.body);
-                    if (atoi(server_.get_body_size().c_str()) < req.body.length())
+                    if (atoi(server_.get_body_size().c_str()) < (int)req.body.length())
                     {
                         server_.setStatus(413);
                         return true;
