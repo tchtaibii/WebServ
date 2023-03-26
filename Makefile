@@ -16,6 +16,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "merge" && git push origin main 
+	git add . && git commit -m "merge" && git push origin webserv 
 
 re: fclean all
