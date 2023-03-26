@@ -83,7 +83,7 @@ namespace ws
                                 std::string request_str = std::string(buffer, valread);
                                 if (!req.deja)
                                 {
-                                    req = parse_http_request(request_str, req, request_im);
+                                    req = parse_http_request(request_str, req, request_im, fds_servers[fileD]);
                                     if (!req.headers_complet)
                                         continue;
                                     fds_servers[fileD].set_req(req);

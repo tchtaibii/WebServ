@@ -3,13 +3,13 @@
 #include <map>
 #include <vector>
 #include "../Socket/socket.hpp"
-// #include "../methods/getMethod.hpp"
 #include "../Response/Response.hpp"
 #include <unistd.h>
 #include <fcntl.h>
 
 namespace ws
 {
+	
 	class location
 	{
 	private:
@@ -56,32 +56,6 @@ namespace ws
 		int fd;
 		bool dir;
 
-		std::map<std::string, location>::iterator locationChecker(std::string path, std::map<std::string, location> &Location)
-		{
-			std::vector<std::string> pathComponents; // vector of paths
-			std::stringstream ss(path);
-			std::string component;			  // tmp of one path
-			std::getline(ss, component, '/'); // getting the first path '/'
-			std::string tmp = "\0";
-			pathComponents.push_back("/" + component);
-			while (std::getline(ss, component, '/')) // loop for getting paths and stock it on the vector(pathComponents)
-			{
-				pathComponents.push_back(tmp + "/" + component);
-				tmp += "/" + component;
-			}
-			if (pathComponents.size() == 1)
-				return Location.find("/");
-			std::map<std::string, location>::iterator it;
-			size_t n = pathComponents.size() - 1;
-			for (; n > 0; n--) // check if one of the pathComponents is exiting on the server(location)
-			{
-				it = Location.find(pathComponents[n]);
-				if (it != Location.end())
-					return it;
-			}
-			return Location.find("/"); // if isn't exist we return end of map
-		}
-
 		bool methodChecker(std::string method, std::vector<std::string> Location)
 		{
 			for (size_t n = 0; n < Location.size(); n++)
@@ -120,7 +94,31 @@ namespace ws
 			status = 0;
 			i = 0;
 		}
-	
+		std::map<std::string, location>::iterator locationChecker(std::string path, std::map<std::string, location> &Location)
+		{
+			std::vector<std::string> pathComponents; // vector of paths
+			std::stringstream ss(path);
+			std::string component;			  // tmp of one path
+			std::getline(ss, component, '/'); // getting the first path '/'
+			std::string tmp = "\0";
+			pathComponents.push_back("/" + component);
+			while (std::getline(ss, component, '/')) // loop for getting paths and stock it on the vector(pathComponents)
+			{
+				pathComponents.push_back(tmp + "/" + component);
+				tmp += "/" + component;
+			}
+			if (pathComponents.size() == 1)
+				return Location.find("/");
+			std::map<std::string, location>::iterator it;
+			size_t n = pathComponents.size() - 1;
+			for (; n > 0; n--) // check if one of the pathComponents is exiting on the server(location)
+			{
+				it = Location.find(pathComponents[n]);
+				if (it != Location.end())
+					return it;
+			}
+			return Location.find("/"); // if isn't exist we return end of map
+		}
 		ws::HttpRequest req;
 		int flg;
 		std::string const &get_port() const { return this->port; }

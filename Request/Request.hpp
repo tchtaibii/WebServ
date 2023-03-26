@@ -16,11 +16,13 @@ namespace ws
         bool Boundary;
         std::string Boundary_token;
         bool headers_complet;
+        std::string upload;
         HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false) {}
     };
 }
 #include "boundary.hpp"
 #include "Chunked.hpp"
+#include "../Config/parse.hpp"
 namespace ws
 {
     void httpRequestInit(HttpRequest &req, bool all)
@@ -31,6 +33,7 @@ namespace ws
             req.path.clear();
             req.version.clear();
             req.headers.clear();
+            req.upload.clear();
         }
         req.body.clear();
         req.Boundary_token.clear();
@@ -60,7 +63,7 @@ namespace ws
                         for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                         {
                             std::string tmp = it->first;
-                            std::ofstream file("./Assets/uploads/" + tmp);
+                            std::ofstream file(req.upload + "/" + tmp);
                             if (file.is_open())
                             {
                                 file << it->second;
@@ -75,7 +78,7 @@ namespace ws
                         req.body = body.substr(2);
                         req.deja = false;
                         std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
-                        std::ofstream file("./Assets/uploads/" + getCurrentDateTime() + "." + extension);
+                        std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
                         if (file.is_open())
                         {
                             file << req.body;
@@ -94,7 +97,7 @@ namespace ws
                 {
                     verifyChunk(req.body);
                     std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
-                    std::ofstream file("./Assets/uploads/" + getCurrentDateTime() + "." + extension);
+                    std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
                     if (file.is_open())
                     {
                         file << req.body;
@@ -108,7 +111,7 @@ namespace ws
         }
         return false;
     }
-    HttpRequest parse_http_request(std::string tmp, HttpRequest &req, std::string &request_im)
+    HttpRequest parse_http_request(std::string tmp, HttpRequest &req, std::string &request_im, server server_)
     {
         if (tmp.find("\r\n\r\n") == std::string::npos && !req.headers_complet)
         {
@@ -140,6 +143,8 @@ namespace ws
             }
             if (req.method == "POST")
             {
+                location my_location = server_.locationChecker(req.path, server_.get_location())->second;
+                req.upload  = my_location.get_root().substr(0, my_location.get_root().length() - 1) + my_location.get_upload();
                 req.body = tmp.substr(pos + 2);
                 try
                 {
