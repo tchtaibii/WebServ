@@ -133,8 +133,10 @@ void cgi::exec_cgi(char **args, char **env, int fd)
     {
         dup2(fd, 0);
         dup2(out_fd, 1);
-        if (execve(args[0], args, env) == -1)
-            exit(1);
+        // if (execve(args[0], args, env) == -1)
+        //     exit(1);
+        execve(args[0], args, env);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -199,15 +201,16 @@ void cgi::fill_args()
 void cgi::exec()
 {
     fill_args();
-    std::cout << args[0] << std::endl;
     try
     {
         if (access(args[0], F_OK | X_OK) == -1)
             throw(cgi_open_error());
     }
-    catch(...){}
-    outname = random_name() + ".html";
-    in_fd = open("php.php", O_RDONLY);
+    catch (...)
+    {
+    }
+    outname = "cgi/" + random_name() + ".html";
+    in_fd = open(path.c_str(), O_RDONLY);
     out_fd = open(outname.c_str(), O_RDWR | O_CREAT, 0666);
     fill_env();
     exec_cgi(args, env, in_fd);
