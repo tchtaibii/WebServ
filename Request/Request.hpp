@@ -47,7 +47,7 @@ namespace ws
         req.headers_complet = false;
     }
 
-    bool bodyParsing(HttpRequest &req, std::string &body, bool the_end, server server_)
+    bool bodyParsing(HttpRequest &req, std::string &body, bool the_end, server &server_)
     {
         if (req.method == "POST")
         {
@@ -100,7 +100,7 @@ namespace ws
                     verifyChunk(req.body);
                     if (atoi(server_.get_body_size().c_str()) < req.body.length())
                     {
-                        req.chunked_c = -1;
+                        server_.setStatus(413);
                         return true;
                     }
                     std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));

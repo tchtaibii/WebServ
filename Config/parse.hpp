@@ -121,6 +121,7 @@ namespace ws
 		}
 		ws::HttpRequest req;
 		int flg;
+		void setStatus(int st) {this->status = st;}
 		std::string const &get_port() const { return this->port; }
 		int const &getSocket() const { return this->socket; }
 		void setSocket(const int &sock) { this->socket = sock; }

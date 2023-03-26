@@ -87,16 +87,7 @@ namespace ws
                                     req = parse_http_request(request_str, req, request_im, fds_servers[fileD]);
                                     if (!req.headers_complet)
                                         continue;
-                                    if (!req.headers["Content-Length"].empty() && atoi(fds_servers[fileD].get_body_size().c_str()) < atoi(req.headers["Content-Length"].c_str()))
-                                    {
-                                        FD_SET(fileD, &writefds);
-                                        FD_SET(fileD, &tmp_writefds);
-                                        FD_CLR(fileD, &readfds);
-                                        FD_CLR(fileD, &tmp_readfds);
-                                        req.con = 0;
-                                        status_code = 404;
-                                        continue;
-                                    }
+                                    fds_servers[fileD].is_req_well_formed();
                                     fds_servers[fileD].set_req(req);
                                     request_im.clear();
                                     tmp_body = req.body;
