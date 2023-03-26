@@ -1,4 +1,3 @@
-
 #pragma once
 #include <iostream>
 #include <string>
@@ -13,6 +12,7 @@
 #include <stdlib.h>
 #include <iomanip>
 #include <sys/time.h>
+#include <dirent.h>
 namespace ws
 {
     std::string get_PWD(char **env)
@@ -116,5 +116,70 @@ namespace ws
         if (stat(path.c_str(), &status) == 0)
             return (status.st_mode & S_IFDIR) != 0;
         return false;
+    }
+    bool remove_directory(std::string path)
+    {
+        // Open the directory
+        DIR *dir = opendir(path.c_str());
+        if (!dir)
+        {
+            // Directory does not exist or cannot be opened
+            return false;
+        }
+
+        // Loop over the contents of the directory
+        struct dirent *entry;
+        while ((entry = readdir(dir)))
+        {
+            // Ignore the "." and ".." entries
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            {
+                continue;
+            }
+
+            // Construct the full path of the current entry
+            std::string entry_path = std::string(path) + std::string(entry->d_name);
+            std::cout << entry_path << std::endl;
+            // Recursively remove subdirectories
+            if (is_directory(entry_path))
+            {
+                entry_path = entry_path + "/";
+                if (!remove_directory(entry_path.c_str()))
+                {
+                    closedir(dir);
+                    return false;
+                }
+            }
+            else
+            {
+                // Remove files
+                if (remove(entry_path.c_str()) != 0)
+                {
+                    closedir(dir);
+                    return false;
+                }
+            }
+        }
+
+        // Close the directory and remove it
+        closedir(dir);
+        if (rmdir(path.c_str()) != 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+    bool is_connected(int sockfd)
+    {
+        int error;
+        socklen_t len = sizeof(error);
+        int retval = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &error, &len);
+        if (retval != 0)
+            return 0;
+        if (error == 0)
+            return true;
+        else
+            return 0;
     }
 }

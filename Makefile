@@ -16,6 +16,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "fix content length" && git push origin webserv 
+	git add . && git commit -m "merge" && git push origin webserv 
 
 re: fclean all

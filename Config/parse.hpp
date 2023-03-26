@@ -6,10 +6,10 @@
 #include "../Response/Response.hpp"
 #include <unistd.h>
 #include <fcntl.h>
+#include <cstdio>
 
 namespace ws
 {
-	
 	class location
 	{
 	private:
@@ -55,6 +55,7 @@ namespace ws
 		int i;
 		int fd;
 		bool dir;
+		std::string Location;
 
 		bool methodChecker(std::string method, std::vector<std::string> Location)
 		{
@@ -76,12 +77,12 @@ namespace ws
 				{
 					if (req.path.back() != '/')
 						status = 301;
-					else if (access(file.c_str(), R_OK) || this->_location[req.path].get_autoindex() == "off")
-						status = 402;
+					else if (access(file.c_str(), R_OK) || this->_location[Location].get_autoindex() == "off")
+						status = 403;
 					else
 						status = 200;
 					dir = true;
-					return ;
+					return;
 				}
 				status = 200;
 				return;
@@ -89,11 +90,38 @@ namespace ws
 			status = 404;
 		}
 
+		void DeleteMethod(const std::string &Location)
+		{
+			std::string file = this->get_location()[Location].get_root() + this->get_location()[Location].get_default();
+			if (Location != req.path)
+				file = pathjoin(this->get_location()[Location].get_root(), req.path);
+			this->path = file;
+			if (fileExists(file))
+			{
+				if (is_directory(file))
+				{
+					if (req.path.back() != '/')
+						status = 409;
+					else if (access(file.c_str(), W_OK))
+						status = 403;
+					else if (remove_directory(path))
+						status = 204;
+					return;
+				}
+				if (!std::remove(path.c_str()))
+					status = 204;
+				return;
+			}
+			status = 404;
+		}
+
 	public:
-		server(){
+		server()
+		{
 			status = 0;
 			i = 0;
 		}
+
 		std::map<std::string, location>::iterator locationChecker(std::string path, std::map<std::string, location> &Location)
 		{
 			std::vector<std::string> pathComponents; // vector of paths
@@ -119,9 +147,10 @@ namespace ws
 			}
 			return Location.find("/"); // if isn't exist we return end of map
 		}
+
 		ws::HttpRequest req;
 		int flg;
-		void setStatus(int st) {this->status = st;}
+		void setStatus(int st){ this->status = st;}
 		std::string const &get_port() const { return this->port; }
 		int const &getSocket() const { return this->socket; }
 		void setSocket(const int &sock) { this->socket = sock; }
@@ -132,7 +161,7 @@ namespace ws
 		void set_host(const std::string &host) { this->host = host; }
 		std::string const &get_server_name() const { return this->server_name; }
 		void set_server_name(const std::string &server_name) { this->server_name = server_name; }
-		std::string const &get_body_size() const { return this->body_size;}
+		std::string const &get_body_size() const { return this->body_size; }
 		void set_body_size(const std::string &a) { this->body_size = a; }
 		std::string const &get_error_page() const { return this->error_page; }
 		void set_error_page(const std::string &e) { this->error_page = e; }
@@ -143,7 +172,7 @@ namespace ws
 		void set_req(ws::HttpRequest reqi)
 		{
 			reqi.body.clear();
-			this->req = reqi; 
+			this->req = reqi;
 		}
 		ws::HttpRequest get_req() { return this->req; }
 		std::string get_body() { return this->body; }
@@ -153,14 +182,16 @@ namespace ws
 		bool getDone() { return this->_response.done; }
 		void is_req_well_formed()
 		{
+			this->Location = locationChecker(req.path, this->get_location())->first;
 			std::map<std::string, std::string> hed(req.headers.begin(), req.headers.end());
 			std::string a = hed["Transfer-Encoding"];
 			std::string C = hed["Content-Length"];
-			// std::string R = _location[req.path].get_redirect().find("301")->second;
-			// if (!R.empty())
-			// 	status = 301;
-			// std::cout << _location[req.path].get_redirect().find("301")->second << std::endl;
-			if (!a.empty() && a != "chunked\r")
+			std::string R;
+			if (_location[this->Location].get_redirect().find("301") != _location[this->Location].get_redirect().end())
+				R = _location[this->Location].get_redirect().find("301")->first;
+			if (!R.empty())
+				status = 301;
+			else if (!a.empty() && a != "chunked\r")
 				status = 501;
 			else if (a.empty() && C.empty() && req.method == "POST")
 				status = 400;
@@ -185,20 +216,14 @@ namespace ws
 		void checker()
 		{
 			std::map<std::string, location> l = this->get_location();
-			std::map<std::string, location>::iterator it = locationChecker(req.path, l);
-			// if (!methodChecker(req.method, l[it->first].get_method()))
-			// 	status = 405;
-			// if (status == 405)
-			// 	exit(1);
+			if (!methodChecker(req.method, l[Location].get_method()))
+				status = 405;
 			if (req.method == "GET" && !status)
-				getMethod(it->first);
+				getMethod(Location);
+			else if (req.method == "DELETE" && !status)
+				DeleteMethod(Location);
 			// else if (req.method == "POST" && !status)
 			//     status =  PostMethod();
-			// else if (req.method == "DELETE" && !status)
-			//     status = DeleteMethod();
-			// _response = _response();
-			// std::cout << req.path << std::endl;
-			// return responseFunction(req.path, req, status);
 		}
 
 		void response()
@@ -211,19 +236,20 @@ namespace ws
 					this->_response.set_header(req.path + '/', status, req, dir);
 				else
 					this->_response.set_header(this->path, status, req, dir);
-				send(this->socket, _response.response_header.c_str(), _response.response_header.length(), 0);
-				if (!dir && status != 301)
+				if ((!dir && status != 301) || (dir && status == 403))
 					fd = open(_response.file_path.c_str(), O_RDONLY);
+				_response._send(_response.response_header.c_str(), this->socket, _response.response_header.length());
 				this->_response.done = false;
+				return ;
 			}
-			if (dir || status == 301)
+			if ((dir && status != 403) || status == 301)
 			{
 				if (status != 301)
-					send(this->socket, _response.dir_body.c_str(), _response.dir_body.length(), 0);
+					_response._send(_response.dir_body.c_str(), this->socket, _response.dir_body.length());
 				this->_response.done = true;
 				this->_response.first_time = false;
 				status = 0;
-				return ;
+				return;
 			}
 			char buffer[1024];
 			lseek(fd, i, SEEK_SET);
@@ -234,14 +260,17 @@ namespace ws
 				i = 0;
 				status = 0;
 				close(fd);
+				return ;
 			}
-			try 
+			if (is_connected(this->socket))
+				i += _response._send(buffer, this->socket, sizeof(buffer));
+			else
 			{
-				i += send(this->socket, buffer, sizeof(buffer), 0);
-			}
-			catch (...)
-			{
-				std::cerr << "a\n";
+				this->_response.done = true;
+				this->_response.first_time = false;
+				i = 0;
+				status = 0;
+				close(fd);
 			}
 		}
 	};
