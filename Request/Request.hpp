@@ -17,7 +17,8 @@ namespace ws
         std::string Boundary_token;
         bool headers_complet;
         std::string upload;
-        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false) {}
+        int chunked_c;
+        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false), chunked_c(0) {}
     };
 }
 #include "boundary.hpp"
@@ -42,10 +43,11 @@ namespace ws
         req.con = 0;
         req.end_ = 0;
         req.Boundary = 0;
+        req.chunked_c = 0;
         req.headers_complet = false;
     }
 
-    bool bodyParsing(HttpRequest &req, std::string &body, bool the_end)
+    bool bodyParsing(HttpRequest &req, std::string &body, bool the_end, server server_)
     {
         if (req.method == "POST")
         {
@@ -96,6 +98,11 @@ namespace ws
                 if (the_end)
                 {
                     verifyChunk(req.body);
+                    if (atoi(server_.get_body_size().c_str()) < req.body.length())
+                    {
+                        req.chunked_c = -1;
+                        return true;
+                    }
                     std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
                     std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
                     if (file.is_open())

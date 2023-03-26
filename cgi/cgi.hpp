@@ -129,12 +129,11 @@ void cgi::exec_cgi(char **args, char **env, int fd)
     {
         throw(fork_error());
     }
-    if (cgi_pid != 0)
+    if (cgi_pid == 0)
     {
         dup2(fd, 0);
         dup2(out_fd, 1);
-        // if (execve(args[0], args, env) == -1)
-        //     exit(1);
+
         execve(args[0], args, env);
         exit(EXIT_FAILURE);
     }

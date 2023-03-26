@@ -131,7 +131,7 @@ namespace ws
 		void set_host(const std::string &host) { this->host = host; }
 		std::string const &get_server_name() const { return this->server_name; }
 		void set_server_name(const std::string &server_name) { this->server_name = server_name; }
-		std::string const &get_body_size() const { return this->body_size; }
+		std::string const &get_body_size() const { return this->body_size;}
 		void set_body_size(const std::string &a) { this->body_size = a; }
 		std::string const &get_error_page() const { return this->error_page; }
 		void set_error_page(const std::string &e) { this->error_page = e; }
