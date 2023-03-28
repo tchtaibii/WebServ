@@ -55,7 +55,7 @@ class response
 			}
 			oss << "\r\n";
 			this->response_header = oss.str();
-			std::cout << response_header << std::endl;
+			// std::cout << response_header << std::endl;
         }
 
 		int	_send(const char *a, int socket, size_t length)

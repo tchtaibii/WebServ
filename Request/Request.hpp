@@ -183,9 +183,13 @@ namespace ws
             {
                 location my_location = server_.locationChecker(req.path, server_.get_location())->second;
                 if (!my_location.get_upload().empty())
+                {
                     req.upload = my_location.get_root().substr(0, my_location.get_root().length() - 1) + my_location.get_upload();
+                }
                 else
+                {
                     req.NoUpload = true;
+                }
                 req.body = tmp.substr(pos + 2);
                 try
                 {

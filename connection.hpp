@@ -82,7 +82,6 @@ namespace ws
                             else if (valread > 0)
                             {
                                 std::string request_str = std::string(buffer, valread);
-                                std::cerr << request_str;
                                 if (!req.deja)
                                 {
                                     req = parse_http_request(request_str, req, request_im, fds_servers[fileD]);
