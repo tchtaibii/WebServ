@@ -82,6 +82,7 @@ namespace ws
                             else if (valread > 0)
                             {
                                 std::string request_str = std::string(buffer, valread);
+                                std::cout << request_str;
                                 if (!req.deja)
                                 {
                                     req = parse_http_request(request_str, req, request_im, fds_servers[fileD]);
@@ -94,9 +95,17 @@ namespace ws
                                     req.deja = true;
                                     if (req.method != "POST")
                                     {
+                                        httpRequestInit(req, 0);
                                         FD_SET(fileD, &writefds);
                                         FD_CLR(fileD, &readfds);
+                                        continue;
+                                    }
+                                    if (req.method == "POST" && atoi(req.headers["Content-Length"].c_str()) + 2 == (int)req.body.length())
+                                    {
+                                        req.con = bodyParsing(req, tmp_body, req.end_, fds_servers[fileD]);
                                         httpRequestInit(req, 0);
+                                        FD_SET(fileD, &writefds);
+                                        FD_CLR(fileD, &readfds);
                                         continue;
                                     }
                                 }

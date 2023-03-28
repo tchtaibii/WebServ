@@ -208,7 +208,7 @@ namespace ws
                 {
                     req.chunked = true;
                     std::string tmp_tmp = req.body;
-                    req.body = "";
+                    req.body.clear();
                     chunked_uncoding(tmp_tmp, req);
                     tmp_tmp.clear();
                 }
