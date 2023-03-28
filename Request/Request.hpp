@@ -20,7 +20,8 @@ namespace ws
         int chunked_c;
         std::map<std::string, std::string> cookies;
         std::string session;
-        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false), chunked_c(0) {}
+        bool NoUpload;
+        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false), chunked_c(0), NoUpload(0) {}
     };
 }
 #include "boundary.hpp"
@@ -40,8 +41,9 @@ namespace ws
             req.version.clear();
             req.headers.clear();
             req.upload.clear();
+            req.NoUpload = 0;
+            req.body.clear();
         }
-        req.body.clear();
         req.Boundary_token.clear();
         req.chunked = 0;
         req.deja = 0;
@@ -67,29 +69,39 @@ namespace ws
                     if (req.Boundary && p != std::string::npos)
                     {
                         std::map<std::string, std::string> boundary_files = boundaryParsing(body, req);
-                        for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
+                        if (!req.NoUpload)
                         {
-                            std::string tmp = it->first;
-                            std::ofstream file(req.upload + "/" + tmp);
-                            if (file.is_open())
+                            for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                             {
-                                file << it->second;
-                                file.close();
+                                std::string tmp = it->first;
+                                std::ofstream file(req.upload + "/" + tmp);
+                                if (file.is_open())
+                                {
+                                    file << it->second;
+                                    file.close();
+                                }
+                                req.body.clear();
+                                httpRequestInit(req, 0);
                             }
-                            httpRequestInit(req, 0);
                         }
+                        else
+                            req.body = boundary_files.begin()->second;
                         return true;
                     }
                     else
                     {
                         req.body = body.substr(2);
                         req.deja = false;
-                        std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
-                        std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
-                        if (file.is_open())
+                        if (!req.NoUpload)
                         {
-                            file << req.body;
-                            file.close();
+                            std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
+                            std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
+                            if (file.is_open())
+                            {
+                                file << req.body;
+                                file.close();
+                            }
+                            req.body.clear();
                         }
                         httpRequestInit(req, 0);
                         return true;
@@ -106,17 +118,22 @@ namespace ws
                     verifyChunk(req.body);
                     if (atoi(server_.get_body_size().c_str()) < (int)req.body.length())
                     {
-                    //     server_.setStatus(413);
-                    //     return true;
+                        //     server_.setStatus(413);
+                        //     return true;
                     }
-                    std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
-                    std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
-                    if (file.is_open())
+                    req.body = req.body.substr(0, req.body.length() - 2);
+                    if (!req.NoUpload)
                     {
-                        file << req.body.substr(0, req.body.length() - 2);
-                        file.close();
+                        std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
+                        std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
+                        if (file.is_open())
+                        {
+                            file << req.body;
+                            file.close();
+                        }
+                        req.body.clear();
+                        httpRequestInit(req, 0);
                     }
-                    httpRequestInit(req, 0);
                     return true;
                 }
                 return false;
@@ -165,7 +182,10 @@ namespace ws
             if (req.method == "POST")
             {
                 location my_location = server_.locationChecker(req.path, server_.get_location())->second;
-                req.upload = my_location.get_root().substr(0, my_location.get_root().length() - 1) + my_location.get_upload();
+                if (!my_location.get_upload().empty())
+                    req.upload = my_location.get_root().substr(0, my_location.get_root().length() - 1) + my_location.get_upload();
+                else
+                    req.NoUpload = true;
                 req.body = tmp.substr(pos + 2);
                 try
                 {
