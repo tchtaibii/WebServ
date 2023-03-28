@@ -69,7 +69,8 @@ namespace ws
                     if (req.Boundary && p != std::string::npos)
                     {
                         std::map<std::string, std::string> boundary_files = boundaryParsing(body, req);
-                        if (!req.NoUpload)
+                        // if (!req.NoUpload)
+                        std::cout << boundary_files.size() << std::endl;
                         {
                             for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                             {
@@ -84,8 +85,8 @@ namespace ws
                                 httpRequestInit(req, 0);
                             }
                         }
-                        else
-                            req.body = boundary_files.begin()->second;
+                        // else
+                        //     req.body = boundary_files.begin()->second;
                         return true;
                     }
                     else
@@ -171,14 +172,14 @@ namespace ws
                 std::string header_value = line.substr(tmp_pos + 2);
                 req.headers.insert(make_pair(header_name, header_value));
             }
-            // if (req.headers.count("Cookie") > 0)
-            // {
-            //     req.cookies = parseKeyValuePairs(req.headers["Cookie"].substr(0, req.headers["Cookie"].length() - 1));
-            //     req.session = req.cookies["session_id"];
-            //     setCookies_onfile(req.cookies, req.session);
-            // }
-            // else
-            //     req.session = generateSession();
+            if (req.headers.count("Cookie") > 0)
+            {
+                req.cookies = parseKeyValuePairs(req.headers["Cookie"].substr(0, req.headers["Cookie"].length() - 1));
+                req.session = req.cookies["session_id"];
+                setCookies_onfile(req.cookies, req.session);
+            }
+            else
+                req.session = generateSession();
             if (req.method == "POST")
             {
                 location my_location = server_.locationChecker(req.path, server_.get_location())->second;
@@ -195,7 +196,15 @@ namespace ws
                 {
                     if (req.headers["Content-Type"].find("boundary=--------------------------"))
                     {
-                        req.Boundary_token = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("boundary=") + 9 + 26, 24);
+                        std::string tmpb = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("boundary=") + 36, 70);
+                        for (size_t i = 0; tmpb[i]; i++)
+                        {
+                            if (tmpb[i] >= '0' && tmpb[i] <= '9')
+                                req.Boundary_token.insert(i, 1, tmpb[i]);
+                            else
+                                break;
+                        }
+                        tmpb.clear();
                         req.Boundary = true;
                     }
                 }

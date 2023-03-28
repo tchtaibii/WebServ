@@ -16,6 +16,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "curl work fine" && git push origin webserv 
+	git add . && git commit -m "boundary test" && git push origin webserv 
 
 re: fclean all
