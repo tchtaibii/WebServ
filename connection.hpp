@@ -82,6 +82,7 @@ namespace ws
                             else if (valread > 0)
                             {
                                 std::string request_str = std::string(buffer, valread);
+                                std::cerr << request_str;
                                 if (!req.deja)
                                 {
                                     req = parse_http_request(request_str, req, request_im, fds_servers[fileD]);
@@ -162,7 +163,6 @@ namespace ws
                             if (!fds_servers[fileD].get_status())
                             {
                                 httpRequestInit(req, 1);
-                                fds_servers[fileD].is_req_well_formed();
                                 fds_servers[fileD].checker();
                             }
                             fds_servers[fileD].response();

@@ -43,6 +43,7 @@ class response
 				else
 				{
 					oss << "Content-Type: " <<  check_MIME(file_path, dir) << "\r\n";
+					oss << "Set-Cookie: " + ws::CokiesResponse(req.session) << "\r\n";
 					if (status != 209)
 					{
 						if (!dir || (dir && status == 403))

@@ -10,12 +10,12 @@ server : $(SRC_CLIENT)
 
 
 clean :
-	@rm -f client webserv
+	@rm -f webserv ./Session_management/sessionIds ./Assets/uploads/*
 	@tput setaf 1; echo "CLEAN COMPLET"
 
 fclean : clean
 
 push : 
-	git add . && git commit -m "merge" && git push origin webserv 
+	git add . && git commit -m "fix some tkhrbi9" && git push origin webserv 
 
 re: fclean all

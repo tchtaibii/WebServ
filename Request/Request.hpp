@@ -18,19 +18,24 @@ namespace ws
         bool headers_complet;
         std::string upload;
         int chunked_c;
+        std::map<std::string, std::string> cookies;
+        std::string session;
         HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false), chunked_c(0) {}
     };
 }
 #include "boundary.hpp"
 #include "Chunked.hpp"
 #include "../Config/parse.hpp"
+#include "../Session_management/Session.hpp"
 namespace ws
 {
     void httpRequestInit(HttpRequest &req, bool all)
     {
         if (all)
         {
+            req.session.clear();
             req.method.clear();
+            req.cookies.clear();
             req.path.clear();
             req.version.clear();
             req.headers.clear();
@@ -97,17 +102,18 @@ namespace ws
             {
                 if (the_end)
                 {
+                    // std::cout << req.body ;
                     verifyChunk(req.body);
                     if (atoi(server_.get_body_size().c_str()) < (int)req.body.length())
                     {
-                        server_.setStatus(413);
-                        return true;
+                    //     server_.setStatus(413);
+                    //     return true;
                     }
                     std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
                     std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
                     if (file.is_open())
                     {
-                        file << req.body;
+                        file << req.body.substr(0, req.body.length() - 2);
                         file.close();
                     }
                     httpRequestInit(req, 0);
@@ -148,10 +154,18 @@ namespace ws
                 std::string header_value = line.substr(tmp_pos + 2);
                 req.headers.insert(make_pair(header_name, header_value));
             }
+            // if (req.headers.count("Cookie") > 0)
+            // {
+            //     req.cookies = parseKeyValuePairs(req.headers["Cookie"].substr(0, req.headers["Cookie"].length() - 1));
+            //     req.session = req.cookies["session_id"];
+            //     setCookies_onfile(req.cookies, req.session);
+            // }
+            // else
+            //     req.session = generateSession();
             if (req.method == "POST")
             {
                 location my_location = server_.locationChecker(req.path, server_.get_location())->second;
-                req.upload  = my_location.get_root().substr(0, my_location.get_root().length() - 1) + my_location.get_upload();
+                req.upload = my_location.get_root().substr(0, my_location.get_root().length() - 1) + my_location.get_upload();
                 req.body = tmp.substr(pos + 2);
                 try
                 {

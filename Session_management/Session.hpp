@@ -1,3 +1,4 @@
+#pragma once
 #include "../Request/tools.hpp"
 namespace ws
 {
@@ -22,9 +23,8 @@ namespace ws
         file.close();
         if (!id_found)
         {
-            std::fstream file("./Session_management/sessionIds", std::ios::out | std::ios::app);
-            file << "session_id=" << id_sesion << "\n"; // write session ID to file
-            file.close();
+            std::string file = readFileToString("./Session_management/sessionIds") + "session_id=" + id_sesion +  "; \n";
+            writeToFile("./Session_management/sessionIds", file);
         }
         return id_sesion;
     }
