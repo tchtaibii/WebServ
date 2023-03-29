@@ -15,8 +15,7 @@ std::pair<std::string, std::string> split(std::string s)
     return std::make_pair(key, value);
 }
 
-ws::server &server_parse(ws::server &s, const std::pair<std::string, std::string> &m,
-                         std::map<std::string, std::string> &b)
+ws::server &server_parse(ws::server &s, const std::pair<std::string, std::string> &m)
 {
     if (m.first == "port")
         s.set_port(m.second);
@@ -28,12 +27,6 @@ ws::server &server_parse(ws::server &s, const std::pair<std::string, std::string
         s.set_error_page(m.second);
     else if (m.first == "body_size_limit")
         s.set_body_size(m.second);
-    else if (m.first == "cgi")
-    {
-        b.insert(std::make_pair(m.second.substr(0, m.second.find("/")),
-                                m.second.substr(m.second.find("/"), m.second.length())));
-        s.set_cgi(b);
-    }
     return s;
 }
 
@@ -66,6 +59,13 @@ ws::location &location_parse(std::pair<std::string, std::string> &m, ws::locatio
         l.set_default(m.second);
     else if (m.first == "upload")
         l.set_upload(m.second);
+    else if (m.first == "cgi")
+    {
+        if (m.second == "on")
+            l.cgi = true;
+        else
+            l.cgi = false;
+    }
     else if (m.first == "redirect")
     {
         std::map<std::string, std::string> p;
@@ -104,7 +104,7 @@ std::vector<ws::server> ConfingParsing(char **av, std::string &PWD)
                 if (m.first == "}")
                     s.flg = false;
                 else if (m.first != "location")
-                    s = server_parse(s, m, b);
+                    s = server_parse(s, m);
                 else if (m.first == "location")
                 {
                     if (line.find("["))
@@ -124,10 +124,7 @@ std::vector<ws::server> ConfingParsing(char **av, std::string &PWD)
                 }
             }
             if (!b.empty())
-            {
-                s.set_cgi(b);
                 b.clear();
-            }
             if (!_l.empty())
             {
                 s.set_location(_l);

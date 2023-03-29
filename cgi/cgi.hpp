@@ -25,12 +25,13 @@ private:
     char **env;
     char **args;
     int in_fd;
-    // int out_fd;
+    //int out_fd;
     int tmp_fd;
     std::string out_path;
     std::string php;
     std::string py;
     std::string outname;
+    std::string content_type;
     int ext;
 
 public:
@@ -47,6 +48,9 @@ public:
     std::string get_outfile_path();
     void remove_header();
     void wait_for_tempfile_file();
+    void parse_content_type(std::string str);
+    std::string get_content_type();
+    int get_extension();
     class fork_error : public std::exception
     {
         const char *what() const throw()
@@ -139,8 +143,8 @@ void cgi::exec_cgi(char **args, char **env, int fd)
     {
         dup2(fd, 0);
         dup2(tmp_fd, 1);
-        execve(args[0], args, env);
-        exit(EXIT_FAILURE);
+        if (execve(args[0], args, env) == -1)
+            exit(1);
     }
 }
 
@@ -208,13 +212,35 @@ void cgi::wait_for_tempfile_file()
         std::string t;
         std::fstream tempfile;
         tempfile.open("cgi/tempfile");
-        if (getline(tempfile, t))
+        if(getline(tempfile, t))
         {
             break;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         tempfile.close();
     }
+}
+
+void cgi::parse_content_type(std::string str)
+{
+    int i;
+
+    i = str.find("Content-type");
+    while (str[i + 14] != ';')
+    {
+        content_type += str[i + 14];
+        i++;
+    }
+}
+
+std::string cgi::get_content_type()
+{
+    return(content_type);
+}
+
+int cgi::get_extension()
+{
+    return(ext);
 }
 
 void cgi::remove_header()
@@ -226,7 +252,7 @@ void cgi::remove_header()
     std::ofstream outfile;
 
     wait_for_tempfile_file();
-
+    
     infile.open("cgi/tempfile", std::ios::in);
     while (getline(infile, s))
     {
@@ -239,6 +265,7 @@ void cgi::remove_header()
     {
         int i = 0;
         int n = 0;
+        parse_content_type(str);
         while (str[i])
         {
             if (str[i] == '\n')
@@ -264,15 +291,13 @@ void cgi::exec()
         if (access(args[0], F_OK | X_OK) == -1)
             throw(cgi_open_error());
     }
-    catch (...)
-    {
-    }
-    outname = "cgi/" + random_name() + ".html";
+    catch(...){}
+    outname = "cgi/" + random_name();
     in_fd = open(path.c_str(), O_RDONLY);
     tmp_fd = open("cgi/tempfile", O_CREAT | O_WRONLY, 0666);
     fill_env();
     exec_cgi(args, env, in_fd);
-    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(100));
     remove_header();
     remove("cgi/tempfile");
 }

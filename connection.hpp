@@ -31,6 +31,7 @@ namespace ws
         fd_set readfds;
         fd_set writefds;
         int status_code = 0;
+        int tmp = 1;
         int max = 0;
         int new_socket;
         FD_ZERO(&readfds);
@@ -57,6 +58,7 @@ namespace ws
                     {
                         new_socket = accept(fileD, NULL, NULL);
                         fcntl(new_socket, F_SETFL, O_NONBLOCK);
+                        setsockopt(new_socket, SOL_SOCKET, SO_NOSIGPIPE, &tmp, sizeof(tmp));
                         FD_SET(new_socket, &readfds);
                         clients.push_back(new_socket);
                         change_socket(fds_servers, fileD, new_socket);

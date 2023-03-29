@@ -175,10 +175,13 @@ namespace ws
         }
         return true;
     }
-    std::string pathjoin(std::string root, std::string &path)
+    std::string pathjoin(std::string root, std::string &path, std::string Location)
     {
         std::string r;
-        r = root + path.substr(1);
+        if (root.back() != '/')
+            root += '/';
+        r = root + path.substr(Location.length());
+        std::cout << r << std::endl;
         return r;
     }
 
@@ -243,16 +246,14 @@ namespace ws
 
         return true;
     }
-    bool is_connected(int sockfd)
+    std::string check_file(std::string path)
     {
-        int error;
-        socklen_t len = sizeof(error);
-        int retval = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &error, &len);
-        if (retval != 0)
-            return 0;
-        if (error == 0)
-            return true;
-        else
-            return 0;
+        if (fileExists(path + "index.html"))
+            return path + "index.html";
+        else if (fileExists(path + "index.py"))
+            return path + "index.py";
+        else if (fileExists(path + "index.php"))
+            return path + "index.php";
+        return std::string();
     }
 }
