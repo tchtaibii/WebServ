@@ -28,6 +28,7 @@ namespace ws
 #include "Chunked.hpp"
 #include "../Config/parse.hpp"
 #include "../Session_management/Session.hpp"
+#include <iostream>
 namespace ws
 {
     void httpRequestInit(HttpRequest &req, bool all)
@@ -70,23 +71,24 @@ namespace ws
                     {
                         std::map<std::string, std::string> boundary_files = boundaryParsing(body, req);
                         // if (!req.NoUpload)
-                        std::cout << boundary_files.size() << std::endl;
                         {
                             for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                             {
-                                std::string tmp = it->first;
-                                std::ofstream file(req.upload + "/" + tmp);
-                                if (file.is_open())
+                                if (it->second.size() != 0)
                                 {
-                                    file << it->second;
-                                    file.close();
+                                    std::string tmp = it->first;
+                                    std::ofstream file(req.upload + "/" + tmp);
+                                    if (file.is_open())
+                                    {
+                                        file << it->second;
+                                        file.close();
+                                    }
+                                    req.body.clear();
+                                    httpRequestInit(req, 0);
                                 }
-                                req.body.clear();
-                                httpRequestInit(req, 0);
                             }
                         }
-                        // else
-                        //     req.body = boundary_files.begin()->second;
+                        // else req.body = boundary_files.begin()->second;
                         return true;
                     }
                     else
@@ -115,7 +117,6 @@ namespace ws
             {
                 if (the_end)
                 {
-                    // std::cout << req.body ;
                     verifyChunk(req.body);
                     if (atoi(server_.get_body_size().c_str()) < (int)req.body.length())
                     {
@@ -176,6 +177,33 @@ namespace ws
             {
                 req.cookies = parseKeyValuePairs(req.headers["Cookie"].substr(0, req.headers["Cookie"].length() - 1));
                 req.session = req.cookies["session_id"];
+                std::fstream myfile("./Session_management/sessionIds", std::ios::in | std::ios::out | std::ios::app);
+                std::string line;
+                if (myfile.is_open())
+                {
+                    bool Token_d;
+                    while (getline(myfile, line))
+                    {
+                        if (line.find(req.session) != std::string::npos)
+                        {
+                            Token_d = true;
+                            break;
+                        }
+                        else
+                            Token_d = false;
+                    }
+                    myfile.close();
+                    if (!Token_d)
+                    {
+
+                        std::ofstream myfile2("./Session_management/sessionIds", std::ios::app);
+                        if (myfile2.is_open())
+                        {
+                            myfile2 << "session_id=" + req.session + ";\n";
+                            myfile2.close();
+                        }
+                    }
+                }
                 setCookies_onfile(req.cookies, req.session);
             }
             else

@@ -47,7 +47,6 @@ namespace ws
                 }
                 if (isHexadecimal(tmp) && tmp.length() < 7)
                 {
-                    // std::cout << str;
                     str = str.erase(start - 2, tmp.length() + 4);
                     continue;
                 }
