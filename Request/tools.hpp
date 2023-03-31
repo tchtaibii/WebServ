@@ -181,7 +181,6 @@ namespace ws
         if (root.back() != '/')
             root += '/';
         r = root + path.substr(Location.length());
-        std::cout << r << std::endl;
         return r;
     }
 
@@ -246,9 +245,10 @@ namespace ws
 
         return true;
     }
-    std::string check_file(std::string path)
+    std::string check_file(std::string path, int i = 1)
     {
-        if (fileExists(path + "index.html"))
+        (void) i;
+        if (fileExists(path + "index.html") && i == 0)
             return path + "index.html";
         else if (fileExists(path + "index.py"))
             return path + "index.py";

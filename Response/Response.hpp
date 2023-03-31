@@ -40,12 +40,14 @@ class response
 
 			if (cgi_true && !errors && check_extension2(file_path) && req.method != "DELETE")
 			{
-				cgi c(file_path);
+				cgi c(file_path, req);
+				std::cout << "++++++++++++++++cgi++++++++++++++++\n";
 				c.exec();
 				_cgi = true;
 				file_path = c.get_outfile_path();
 				if (c.get_extension() == 1)
 					content_type = c.get_content_type();
+				std::cout << "++++++++++++++++cgi++++++++++++++++\n";
 			}
 			std::ostringstream oss;
 			oss << req.version + response_message(status);

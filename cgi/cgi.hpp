@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <chrono>
 #include <thread>
+#include<string>
+#include "../Response/Response.hpp"
 
 class cgi
 {
@@ -20,6 +22,7 @@ public:
 
 private:
     std::string path;
+    int body_existense;
     int cgi_pid;
     int pid_status;
     char **env;
@@ -33,9 +36,11 @@ private:
     std::string outname;
     std::string content_type;
     int ext;
+    ws::HttpRequest req;
+    std::string port;
 
 public:
-    cgi(std::string p);
+    cgi(std::string p, ws::HttpRequest request);
     ~cgi();
     int get_cgi_pid();
     void fill_env();
@@ -82,8 +87,10 @@ int check_extension2(std::string name)
         return (0);
 }
 
-cgi::cgi(std::string p)
+cgi::cgi(std::string p, ws::HttpRequest request)
 {
+    port = request.port;
+    req = request;
     path = p;
     cgi_pid = -1;
     pid_status = 0;
@@ -124,11 +131,76 @@ std::string cgi::get_outfile_path()
 
 void cgi::fill_env()
 {
+    // std::string s = "SERVER_PROTOCOL=";
+
+    // s.append(req.version);
+    // env = new char *[11];
+    // env[0] = new char[s.size() + 1];
+    // strcpy(env[0], s.c_str());
+
+    // s.clear();
+    // s = "SERVER_PORT=";
+    // s.append(port);
+    // env[1] = new char[s.size() + 1];
+    // strcpy(env[1], s.c_str());
+
+    // s.clear();
+    // s = "REQUEST_METHOD=";
+    // s.append(req.method);
+    // env[2] = new char[s.size() + 1];
+    // strcpy(env[2], s.c_str());
+
+    // s.clear();
+    // s = "PATH_INFO=";
+    // s.append(path);
+    // env[3] = new char[s.size() + 1];
+    // strcpy(env[3], s.c_str());
+
+    // s.clear();
+    // s = "SCRIPT_NAME=";
+    // s.append(php);
+    // env[4] = new char[s.size() + 1];
+    // strcpy(env[4], s.c_str());
+
+    // s.clear();
+    // s = "QUERY_STRING=";
+    // //s.append();
+    // env[5] = new char[s.size() + 1];
+    // strcpy(env[5], s.c_str());
+
+    // s.clear();
+    // s = "REMOTE_ADDR=";
+    // s.append("127.0.0.1");
+    // env[6] = new char[s.size() + 1];
+    // strcpy(env[6], s.c_str());
+
+    // s.clear();
+    // s = "REDIRECT_STATUS=";
+    // s.append("200");
+    // env[6] = new char[s.size() + 1];
+    // strcpy(env[6], s.c_str());
+    
+    // s.clear();
+    // s = "CONTENT_TYPE=";
+    // //s.append();
+    // env[8] = new char[s.size() + 1];
+    // strcpy(env[8], s.c_str());
+
+    // s.clear();
+    // s = "CONTENT_LENGTH=";
+    // s.append(std::to_string(req.body.length()));
+    // env[9] = new char[s.size() + 1];
+    // strcpy(env[9], s.c_str());
+
+    // env[10] = NULL;
+
     std::string s = "PATH_INFO=";
+
     s.append(path);
     env = new char *[2];
-    env[0] = new char[11 + path.size()];
+    env[0] = new char[s.size() + 1];
     strcpy(env[0], s.c_str());
+
     env[1] = NULL;
 }
 
@@ -141,7 +213,8 @@ void cgi::exec_cgi(char **args, char **env, int fd)
     }
     if (cgi_pid == 0)
     {
-        dup2(fd, 0);
+        if (body_existense == 1)
+            dup2(fd, 0);
         dup2(tmp_fd, 1);
         if (execve(args[0], args, env) == -1)
             exit(1);
@@ -218,6 +291,7 @@ void cgi::wait_for_tempfile_file()
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         tempfile.close();
+        std::cout << "**************" << std::endl;
     }
 }
 
@@ -252,7 +326,6 @@ void cgi::remove_header()
     std::ofstream outfile;
 
     wait_for_tempfile_file();
-    
     infile.open("cgi/tempfile", std::ios::in);
     while (getline(infile, s))
     {
@@ -293,13 +366,24 @@ void cgi::exec()
     }
     catch(...){}
     outname = "cgi/" + random_name();
-    in_fd = open(path.c_str(), O_RDONLY);
-    tmp_fd = open("cgi/tempfile", O_CREAT | O_WRONLY, 0666);
+    if (!req.body.empty())
+    {
+        body_existense = 1;
+        in_fd = open("cgi/tempbody", O_CREAT | O_RDWR | O_TRUNC, 0666);
+        std::ofstream outbody;
+        outbody.open("cgi/tempbody", std::ios::out);
+        outbody << req.body;
+    }
+    else
+        body_existense = 0;
+    tmp_fd = open("cgi/tempfile", O_CREAT | O_WRONLY | O_TRUNC, 0666);
     fill_env();
     exec_cgi(args, env, in_fd);
     //std::this_thread::sleep_for(std::chrono::milliseconds(100));
     remove_header();
     remove("cgi/tempfile");
+    if (body_existense == 1)
+        remove("cgi/tempbody");
 }
 
 #endif

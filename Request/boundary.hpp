@@ -20,7 +20,7 @@ namespace ws
             std::string fileName;
             size_t pos = body.find("Content-Disposition");
             size_t n = body.find("\r\n", pos);
-                std::cerr << "**************" << body << "****************" << std::endl;
+                // std::cerr << "**************" << body << "****************" << std::endl;
             if (n == std::string::npos)
                 boundary_files.insert(std::make_pair("", ""));
             else

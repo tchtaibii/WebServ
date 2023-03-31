@@ -30,7 +30,6 @@ namespace ws
         HttpRequest req;
         fd_set readfds;
         fd_set writefds;
-        int status_code = 0;
         int tmp = 1;
         int max = 0;
         int new_socket;
@@ -90,8 +89,8 @@ namespace ws
                                     req = parse_http_request(request_str, req, request_im, fds_servers[fileD]);
                                     if (!req.headers_complet)
                                         continue;
-                                    fds_servers[fileD].is_req_well_formed();
                                     fds_servers[fileD].set_req(req);
+                                    fds_servers[fileD].is_req_well_formed();
                                     request_im.clear();
                                     tmp_body = req.body;
                                     req.deja = true;
@@ -105,6 +104,7 @@ namespace ws
                                     if (req.method == "POST" && atoi(req.headers["Content-Length"].c_str()) + 2 == (int)req.body.length())
                                     {
                                         req.con = bodyParsing(req, tmp_body, req.end_, fds_servers[fileD]);
+                                        fds_servers[fileD].set_req(req);
                                         httpRequestInit(req, 0);
                                         FD_SET(fileD, &writefds);
                                         FD_CLR(fileD, &readfds);
@@ -121,6 +121,7 @@ namespace ws
                                             chunked_uncoding(request_str, req);
                                             request_str.clear();
                                             req.con = bodyParsing(req, tmp_body, req.end_, fds_servers[fileD]);
+                                            fds_servers[fileD].set_req(req);
                                         }
                                         else
                                         {
@@ -135,12 +136,14 @@ namespace ws
                                                 FD_CLR(fileD, &readfds);
                                                 FD_CLR(fileD, &tmp_readfds);
                                                 req.con = 0;
-                                                status_code = 404;
+                                                fds_servers[fileD].setStatus(404);
                                                 continue;
                                             }
                                         }
                                         if (req.con)
                                         {
+                                            fds_servers[fileD].set_req(req);
+                                            httpRequestInit(req, 0);
                                             FD_SET(fileD, &writefds);
                                             FD_SET(fileD, &tmp_writefds);
                                             FD_CLR(fileD, &readfds);
@@ -170,6 +173,7 @@ namespace ws
                         }
                         else if (FD_ISSET(fileD, &tmp_writefds))
                         {
+                            std::cout << "READY\n";
                             if (!fds_servers[fileD].get_status())
                             {
                                 httpRequestInit(req, 1);
@@ -185,7 +189,6 @@ namespace ws
                                 fds_servers.erase(fileD);
                                 close(fileD);
                             }
-                            // }
                         }
                     }
                 }

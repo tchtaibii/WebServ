@@ -67,25 +67,35 @@ namespace ws
 
 		void PostMethod(std::string Location)
 		{
-			std::string file = this->get_location()[Location].get_root() + this->get_location()[Location].get_default();
+			this->path = this->get_location()[Location].get_root() + this->get_location()[Location].get_default();
 			if (Location != req.path)
-				file = pathjoin(this->get_location()[Location].get_root(), req.path, this->Location);
-			this->path = file;
-			if (fileExists(file))
+				this->path = pathjoin(this->get_location()[Location].get_root(), req.path, this->Location);
+			std::cout << path << std::endl;
+			if (fileExists(path))
 			{
-				if (is_directory(file))
+				std::cout << "EXist\n";
+				if (is_directory(path))
 				{
 					if (req.path.back() != '/')
 					{
 						status = 301;
 						dir = true;
 					}
+					else if (access(path.c_str(), R_OK)
+						|| !check_file(path).empty())
+					{
+						path = check_file(path, 0);
+						status = 200;
+					}
 					else
 						status = 403;
-					return;
+					return ;
 				}
-				if (!check_extension2(file))
+				if (!check_extension2(path))
 					status = 403;
+				else
+					status = 200;
+				return ;
 			}
 			status = 404;
 		}
@@ -101,9 +111,9 @@ namespace ws
 				{
 					if (req.path.back() != '/')
 						status = 301;
-					else if (!check_file(path).empty())
+					else if (!check_file(path, 0).empty())
 					{
-						path = check_file(path);
+						path = check_file(path, 0);
 						status = 200;
 						return ;
 					}	
@@ -263,10 +273,13 @@ namespace ws
 			std::map<std::string, location> l = this->get_location();
 			if (!methodChecker(req.method, l[Location].get_method()))
 				status = 405;
-			if (req.con)
+			std::cout << "hey\n";
+			std::cout << req.NoUpload << std::endl;
+			if (!req.NoUpload && req.method == "POST")
 			{
 				status = 201;
-				path = this->_location[Location].get_root() + this->_location[Location].get_upload().substr(1); 
+				path = this->_location[Location].get_root() + this->_location[Location].get_upload().substr(1);
+				std::cout << "=-=-=-" << path << std::endl;
 			}
 			else if (req.method == "GET" && !status)
 				getMethod(Location);
@@ -281,7 +294,8 @@ namespace ws
 			std::cout << "lol\n";
 			if (!_response.first_time)
 			{
-				std::cout << status << std::endl;
+				req.port = this->port;
+				std::cout << "here " << status << std::endl;
 				if (status == 301 && dir)
 					this->_response.set_header(req.path + '/', status, req, dir, this->error_page, this->_location[Location].cgi);
 				else
