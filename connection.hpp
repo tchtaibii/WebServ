@@ -89,7 +89,6 @@ namespace ws
                                     req = parse_http_request(request_str, req, request_im, fds_servers[fileD]);
                                     if (!req.headers_complet)
                                         continue;
-                                    std::cout << "|" << req.headers["Content-type"] <<  "|" << std::endl;
                                     fds_servers[fileD].set_req(req);
                                     fds_servers[fileD].is_req_well_formed();
                                     request_im.clear();
