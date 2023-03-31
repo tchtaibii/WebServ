@@ -18,7 +18,7 @@ namespace ws
 		std::string autoindex;
 		std::string _default;
 		std::string upload;
-		std::map<std::string, std::string> redirect;
+		std::string redirect;
 
 	public:
 		bool		cgi;
@@ -31,10 +31,10 @@ namespace ws
 		void set_autoindex(const std::string &b) { this->autoindex = b; }
 		std::string const &get_default() const { return this->_default; }
 		void set_default(const std::string &b) { this->_default = b; }
-		std::string const &get_upload() const { return this->upload; }
+		std::string &get_upload() { return this->upload; }
 		void set_upload(const std::string &b) { this->upload = b; }
-		std::map<std::string, std::string> &get_redirect() { return this->redirect; }
-		void set_redirect(const std::map<std::string, std::string> &b) { this->redirect = b; }
+		std::string &get_redirect() { return this->redirect; }
+		void set_redirect(std::string &b) { this->redirect = b; }
 	};
 
 	class server
@@ -210,7 +210,7 @@ namespace ws
 		// std::map<std::string, std::string> &get_cgi() { return this->cgi; }
 		// void set_cgi(const std::map<std::string, std::string> &c) { this->cgi = c; }
 		std::map<std::string, ws::location> &get_location() { return this->_location; }
-		void set_location(const std::map<std::string, ws::location> &a) { this->_location = a; }
+		void set_location(std::map<std::string, ws::location> a) { this->_location = a; }
 		void set_req(ws::HttpRequest reqi)
 		{
 			// reqi.body.clear();
@@ -229,13 +229,12 @@ namespace ws
 			std::map<std::string, std::string> hed(req.headers.begin(), req.headers.end());
 			std::string a = hed["Transfer-Encoding"];
 			std::string C = hed["Content-Length"];
-			std::string R;
-			if (_location[this->Location].get_redirect().find("301") != _location[this->Location].get_redirect().end())
-				R = _location[this->Location].get_redirect().find("301")->second;
+			std::string R = _location[this->Location].get_redirect();
 			if (!R.empty())
 			{
 				path = R;
 				status = 301;
+				std::cout << "0-=-=-= " << R << std::endl;
 			}
 			if (!a.empty() && a != "chunked\r")
 				status = 501;
@@ -291,7 +290,7 @@ namespace ws
 
 		void response()
 		{
-			std::cout << "lol\n";
+			// std::cout << "lol\n";
 			if (!_response.first_time)
 			{
 				req.port = this->port;

@@ -62,7 +62,6 @@ namespace ws
         if (req.method == "POST")
         {
             std::string a = req.headers["Content-Length"];
-            std::string b = req.headers["Transfer-Encoding"];
             if (!a.empty())
             {
                 size_t lenght_body = atoi(a.c_str());
@@ -79,6 +78,9 @@ namespace ws
                                 if (it->second.size() != 0)
                                 {
                                     std::string tmp = it->first;
+                                    if (!dirExists(req.upload))
+                                        if (createDir(req.upload))
+                                            std::cout << "Directory created successfully" << std::endl;
                                     std::ofstream file(req.upload + "/" + tmp);
                                     if (file.is_open())
                                     {
@@ -89,10 +91,10 @@ namespace ws
                                     httpRequestInit(req, 0);
                                 }
                             }
+                            return true;
                         }
                         else
                             req.body = body;
-                        return true;
                     }
                     else
                     {
@@ -100,6 +102,9 @@ namespace ws
                         req.deja = false;
                         if (!req.NoUpload)
                         {
+                            if (!dirExists(req.upload))
+                                if (createDir(req.upload))
+                                    std::cout << "Directory created successfully" << std::endl;
                             std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
                             std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
                             if (file.is_open())
@@ -113,8 +118,6 @@ namespace ws
                         return true;
                     }
                 }
-                else
-                    return false;
             }
             else if (req.chunked) // chunked
             {
@@ -129,6 +132,9 @@ namespace ws
                     req.body = req.body.substr(0, req.body.length() - 2);
                     if (!req.NoUpload)
                     {
+                        if (!dirExists(req.upload))
+                            if (createDir(req.upload))
+                                std::cout << "Directory created successfully" << std::endl;
                         std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
                         std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
                         if (file.is_open())
@@ -149,9 +155,7 @@ namespace ws
     HttpRequest parse_http_request(std::string tmp, HttpRequest &req, std::string &request_im, server server_)
     {
         if (tmp.find("\r\n\r\n") == std::string::npos && !req.headers_complet)
-        {
             request_im += tmp;
-        }
         else if (!req.deja)
         {
             request_im += tmp.substr(0, tmp.length());
@@ -165,7 +169,7 @@ namespace ws
             std::stringstream req_line_ss(line);
             req_line_ss >> req.method >> req.path >> req.version;
             size_t n;
-            if ( (n = req.path.find('?')) != std::string::npos)
+            if ((n = req.path.find('?')) != std::string::npos)
                 req.query = req.path.substr(n + 1);
             std::cout << req.query << std::endl;
             // Parse headers

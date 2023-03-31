@@ -15,6 +15,29 @@
 #include <dirent.h>
 namespace ws
 {
+    bool dirExists(const std::string &path)
+    {
+        struct stat info;
+        if (stat(path.c_str(), &info) != 0)
+            return false;
+        else if (info.st_mode & S_IFDIR)
+            return true;
+        else
+            return false;
+    }
+    bool createDir(const std::string &path)
+    {
+        int status = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if (status != 0)
+        {
+            std::cerr << "Error creating directory " << path << ": " << strerror(errno) << std::endl;
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
     std::map<std::string, std::string> parseKeyValuePairs(std::string input, char delimiter = ';')
     {
         input.insert(input.length(), 1, ';');
@@ -247,7 +270,7 @@ namespace ws
     }
     std::string check_file(std::string path, int i = 1)
     {
-        (void) i;
+        (void)i;
         if (fileExists(path + "index.html") && i == 0)
             return path + "index.html";
         else if (fileExists(path + "index.py"))

@@ -30,7 +30,7 @@ ws::server &server_parse(ws::server &s, const std::pair<std::string, std::string
     return s;
 }
 
-ws::location &location_parse(std::pair<std::string, std::string> &m, ws::location &l, std::string &PWD)
+ws::location location_parse(std::pair<std::string, std::string> &m , ws::location &l, std::string &PWD)
 {
     size_t os = m.second.find("${PWD}");
     if (os != std::string::npos)
@@ -68,11 +68,8 @@ ws::location &location_parse(std::pair<std::string, std::string> &m, ws::locatio
     }
     else if (m.first == "redirect")
     {
-        std::map<std::string, std::string> p;
-        std::string first = m.second.substr(0, m.second.find("http"));
-        std::string second = m.second.substr(m.second.find("http"), m.second.length());
-        p.insert(std::make_pair(first, second));
-        l.set_redirect(p);
+        std::string second = m.second.substr(m.second.find_last_of("301") + 1, m.second.length());
+        l.set_redirect(second);
     }
     return l;
 }
@@ -91,6 +88,7 @@ std::vector<ws::server> ConfingParsing(char **av, std::string &PWD)
     size_t pos;
 
     s.flg = false;
+
     while (std::getline(ifs, line))
     {
         pos = line.find("server");
@@ -113,14 +111,16 @@ std::vector<ws::server> ConfingParsing(char **av, std::string &PWD)
                     while (std::getline(ifs, line) && l.flg)
                     {
                         m = split(line);
-                        l = location_parse(m, l, PWD);
                         if (m.first == "]")
                         {
                             l.flg = false;
                             break;
                         }
+                        location_parse(m, l,  PWD);
                     }
                     _l.insert(std::make_pair(temp, l));
+                    l.get_redirect().erase();
+                    l.get_upload().erase();
                 }
             }
             if (!b.empty())
