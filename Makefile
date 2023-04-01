@@ -17,6 +17,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "adding querry" && git push origin webserv 
+	git add . && git commit -m "fixing all boundary type" && git push origin webserv 
 
 re: fclean all

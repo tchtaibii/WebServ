@@ -18,12 +18,11 @@ namespace ws
         std::string Boundary_token;
         bool headers_complet;
         std::string upload;
-        int chunked_c;
         std::map<std::string, std::string> cookies;
         std::string session;
         bool NoUpload;
         std::string port;
-        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false), chunked_c(0), NoUpload(0) {}
+        HttpRequest() : chunked(false), deja(false), con(false), end_(false), Boundary(false), headers_complet(false), NoUpload(0) {}
     };
 }
 #include "boundary.hpp"
@@ -54,29 +53,34 @@ namespace ws
         req.con = 0;
         req.end_ = 0;
         req.Boundary = 0;
-        req.chunked_c = 0;
         req.headers_complet = false;
     }
 
     bool bodyParsing(HttpRequest &req, std::string &body, bool the_end, server &server_)
     {
+        std::string a = req.headers["Content-Length"];
+        std::string b = req.headers["Transfer-Encoding"];
+        if (a.empty() && b.empty())
+        {
+            
+            httpRequestInit(req, 0);
+            return true;
+        }
         if (req.method == "POST")
         {
-            std::string a = req.headers["Content-Length"];
             if (!a.empty())
             {
                 size_t lenght_body = atoi(a.c_str());
                 if ((lenght_body + 2 == body.length()))
                 {
-                    size_t p = body.find("----------------------------" + req.Boundary_token + "--");
-                    if (req.Boundary && p != std::string::npos)
+                    if (req.Boundary)
                     {
                         std::map<std::string, std::pair<bool, std::string> > boundary_files = boundaryParsing(body, req);
+                        
                         if (!req.NoUpload)
                         {
                             for (std::map<std::string, std::pair<bool, std::string> >::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                             {
-                                // std::cerr << boundary_files.size() << std::endl;
                                 if (it->second.first)
                                 {
                                     req.query += it->first + "=" + it->second.second + "&";
@@ -124,14 +128,12 @@ namespace ws
                         {
                             req.query = req.body;
                             req.body.clear();
-                            std::cout <<  "|" << req.query << "|" << std::endl;
                             return true;
                         }
                         if (!req.NoUpload)
                         {
                             if (!dirExists(req.upload))
-                                if (createDir(req.upload))
-                                    std::cout << "Directory created successfully" << std::endl;
+                                createDir(req.upload);
                             std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
                             std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
                             if (file.is_open())
@@ -153,8 +155,8 @@ namespace ws
                     verifyChunk(req.body);
                     if (atoi(server_.get_body_size().c_str()) < (int)req.body.length())
                     {
-                        //     server_.setStatus(413);
-                        //     return true;
+                        server_.setStatus(413);
+                        return true;
                     }
                     req.body = req.body.substr(0, req.body.length() - 2);
                     if (!req.NoUpload)
@@ -197,7 +199,6 @@ namespace ws
             size_t n;
             if ((n = req.path.find('?')) != std::string::npos)
                 req.query = req.path.substr(n + 1);
-            std::cout << req.query << std::endl;
             // Parse headers
             while (getline(ss, line))
             {
@@ -259,9 +260,16 @@ namespace ws
                 req.body = tmp.substr(pos + 2);
                 try
                 {
-                    if (req.headers["Content-Type"].find("boundary=--------------------------"))
+                    if (req.headers["Content-Type"].find("boundary=--------------------------") != std::string::npos)
                     {
-                        std::string tmpb = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("boundary=") + 36, 70);
+                        std::string tmpb = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("boundary=") + 9);
+                        size_t j = 0;
+                        for (; tmpb[j]; j++)
+                        {
+                            if (tmpb[j] != '-')
+                                break;
+                        }
+                        tmpb = tmpb.substr(j, 70);
                         for (size_t i = 0; tmpb[i]; i++)
                         {
                             if (tmpb[i] >= '0' && tmpb[i] <= '9')

@@ -15,6 +15,12 @@
 #include <dirent.h>
 namespace ws
 {
+    std::string dashes(size_t len)
+    {
+        std::string str;
+        str.insert(0, len, '-');
+        return str;
+    }
     bool dirExists(const std::string &path)
     {
         struct stat info;
@@ -29,14 +35,9 @@ namespace ws
     {
         int status = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         if (status != 0)
-        {
-            std::cerr << "Error creating directory " << path << ": " << strerror(errno) << std::endl;
             return false;
-        }
         else
-        {
             return true;
-        }
     }
     std::map<std::string, std::string> parseKeyValuePairs(std::string input, char delimiter = ';')
     {
@@ -166,12 +167,13 @@ namespace ws
     }
     size_t countSubstring(const std::string &str, const std::string &sub)
     {
+        std::cout << "sub = " << sub << std::endl;
         size_t count = 0;
         size_t pos = str.find(sub);
         while (pos != std::string::npos)
         {
             count++;
-            pos = str.find(sub, pos + 52);
+            pos = str.find(sub, pos + sub.length());
         }
         return count;
     }

@@ -70,10 +70,8 @@ namespace ws
 			this->path = this->get_location()[Location].get_root() + this->get_location()[Location].get_default();
 			if (Location != req.path)
 				this->path = pathjoin(this->get_location()[Location].get_root(), req.path, this->Location);
-			std::cout << path << std::endl;
 			if (fileExists(path))
 			{
-				std::cout << "EXist\n";
 				if (is_directory(path))
 				{
 					if (req.path.back() != '/')
@@ -225,7 +223,6 @@ namespace ws
 		void is_req_well_formed()
 		{
 			this->Location = locationChecker(req.path, this->get_location())->first;
-			std::cout << "Location = " << Location << std::endl;
 			std::map<std::string, std::string> hed(req.headers.begin(), req.headers.end());
 			std::string a = hed["Transfer-Encoding"];
 			std::string C = hed["Content-Length"];
@@ -234,7 +231,6 @@ namespace ws
 			{
 				path = R;
 				status = 301;
-				std::cout << "0-=-=-= " << R << std::endl;
 			}
 			if (!a.empty() && a != "chunked\r")
 				status = 501;
@@ -268,17 +264,13 @@ namespace ws
 
 		void checker()
 		{
-			std::cout << "checker " << std::endl;
 			std::map<std::string, location> l = this->get_location();
 			if (!methodChecker(req.method, l[Location].get_method()))
 				status = 405;
-			std::cout << "hey\n";
-			std::cout << req.NoUpload << std::endl;
 			if (!req.NoUpload && req.method == "POST")
 			{
 				status = 201;
 				path = this->_location[Location].get_root() + this->_location[Location].get_upload().substr(1);
-				std::cout << "=-=-=-" << path << std::endl;
 			}
 			else if (req.method == "GET" && !status)
 				getMethod(Location);
@@ -290,11 +282,9 @@ namespace ws
 
 		void response()
 		{
-			// std::cout << "lol\n";
 			if (!_response.first_time)
 			{
 				req.port = this->port;
-				std::cout << "here " << status << std::endl;
 				if (status == 301 && dir)
 					this->_response.set_header(req.path + '/', status, req, dir, this->error_page, this->_location[Location].cgi);
 				else

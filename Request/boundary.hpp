@@ -6,7 +6,8 @@ namespace ws
     std::map<std::string, std::pair<bool, std::string> > boundaryParsing(std::string body, HttpRequest &req)
     {
         std::map<std::string, std::pair<bool, std::string> > boundary_files;
-        size_t count = countSubstring(body, "-----------------------------" + req.Boundary_token) - 1;
+        size_t count = countSubstring(body,req.Boundary_token) - 1;
+        size_t dash = body.substr(0, body.find(req.Boundary_token)).substr(2).length();
         for (size_t i = 0; i < count; i++)
         {
             bool input_;
@@ -51,13 +52,13 @@ namespace ws
                             fileName = fileName.substr(6, i);
                         }
                         else
-                            fileName = "t";
+                            fileName = "";
                     }
                 }
                 body = body.substr(body.find("\r\n\r\n") + 2);
-                std::string tmp = body.substr(2, body.find("-----------------------------" + req.Boundary_token) - 4);
+                std::string tmp = body.substr(2, body.find(dashes(dash) + req.Boundary_token) - 4);
                 body = body.substr(body.find(tmp) + tmp.length());
-                if (tmp.find("-----------------------------" + req.Boundary_token) != std::string::npos)
+                if (tmp.find(dashes(dash) + req.Boundary_token) != std::string::npos)
                     tmp.clear();
                 boundary_files.insert(std::make_pair(fileName, std::make_pair(input_, tmp)));
                 fileName.clear();
