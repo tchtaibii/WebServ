@@ -173,7 +173,7 @@ namespace ws
                         }
                         else if (FD_ISSET(fileD, &tmp_writefds))
                         {
-                            // std::cout << "READY\n";
+                            std::cerr << "query = " << "|" << req.query << "|" << std::endl;;
                             if (!fds_servers[fileD].get_status())
                             {
                                 httpRequestInit(req, 1);

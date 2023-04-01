@@ -46,6 +46,7 @@ namespace ws
             req.upload.clear();
             req.NoUpload = 0;
             req.body.clear();
+            req.query.clear();
         }
         req.Boundary_token.clear();
         req.chunked = 0;
@@ -70,36 +71,62 @@ namespace ws
                     size_t p = body.find("----------------------------" + req.Boundary_token + "--");
                     if (req.Boundary && p != std::string::npos)
                     {
-                        std::map<std::string, std::string> boundary_files = boundaryParsing(body, req);
+                        std::map<std::string, std::pair<bool, std::string> > boundary_files = boundaryParsing(body, req);
                         if (!req.NoUpload)
                         {
-                            for (std::map<std::string, std::string>::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
+                            for (std::map<std::string, std::pair<bool, std::string> >::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
                             {
-                                if (it->second.size() != 0)
+                                // std::cerr << boundary_files.size() << std::endl;
+                                if (it->second.first)
                                 {
-                                    std::string tmp = it->first;
-                                    if (!dirExists(req.upload))
-                                        if (createDir(req.upload))
-                                            std::cout << "Directory created successfully" << std::endl;
-                                    std::ofstream file(req.upload + "/" + tmp);
-                                    if (file.is_open())
+                                    req.query += it->first + "=" + it->second.second + "&";
+                                }
+                                else
+                                {
+                                    if (it->second.second.size() != 0)
                                     {
-                                        file << it->second;
-                                        file.close();
+                                        std::string tmp = it->first;
+                                        if (!dirExists(req.upload))
+                                            createDir(req.upload);
+                                        std::ofstream file(req.upload + "/" + tmp);
+                                        if (file.is_open())
+                                        {
+                                            file << it->second.second;
+                                            file.close();
+                                        }
+                                        req.body.clear();
+                                        httpRequestInit(req, 0);
                                     }
-                                    req.body.clear();
-                                    httpRequestInit(req, 0);
                                 }
                             }
-                            return true;
+                            if (!req.query.empty())
+                                req.query = req.query.substr(0, req.query.length() - 1);
                         }
                         else
+                        {
+                            for (std::map<std::string, std::pair<bool, std::string> >::iterator it = boundary_files.begin(); it != boundary_files.end(); it++)
+                            {
+                                if (it->second.first)
+                                    req.query += it->first + "=" + it->second.second + "&";
+                            }
+                            if (!req.query.empty())
+                                req.query.substr(0, req.query.length() - 1);
                             req.body = body;
+                        }
+                        return true;
                     }
                     else
                     {
                         req.body = body.substr(2);
                         req.deja = false;
+                        
+                        if (req.headers["Content-Type"] == "application/x-www-form-urlencoded\r")
+                        {
+                            req.query = req.body;
+                            req.body.clear();
+                            std::cout <<  "|" << req.query << "|" << std::endl;
+                            return true;
+                        }
                         if (!req.NoUpload)
                         {
                             if (!dirExists(req.upload))
@@ -133,8 +160,7 @@ namespace ws
                     if (!req.NoUpload)
                     {
                         if (!dirExists(req.upload))
-                            if (createDir(req.upload))
-                                std::cout << "Directory created successfully" << std::endl;
+                            createDir(req.upload);
                         std::string extension = req.headers["Content-Type"].substr(req.headers["Content-Type"].find("/") + 1, req.headers["Content-Type"].find("\r"));
                         std::ofstream file(req.upload + "/" + getCurrentDateTime() + "." + extension);
                         if (file.is_open())
