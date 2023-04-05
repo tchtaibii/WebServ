@@ -1,22 +1,22 @@
 FLAGS = -Wall -Wextra -Werror
-SRC = confParsing/*.cpp main.cpp
+SRC = main.cpp 
 CC = c++
 
 all : server 
 
 server : $(SRC_CLIENT)
 	@$(CC) $(FLAGS) $(SRC) -o webserv
-	@tput setaf 2; echo "Server IS READY"
 	@./webserv conf.conf
+	@touch Session_management/sessionIds
 
 
 clean :
-	@rm -f client webserv
+	@rm -f webserv ./Session_management/sessionIds ./Assets/uploads/*
 	@tput setaf 1; echo "CLEAN COMPLET"
 
 fclean : clean
 
 push : 
-	git add . && git commit -m "Boundary" && git push origin webserv 
+	git add . && git commit -m "99%" && git push origin main 
 
 re: fclean all

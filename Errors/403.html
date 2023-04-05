@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forbidden: 403</title>
+</head>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+        font-family: 'Press Start 2P';
+        color: #FFFFFF;
+        text-align: center;
+    }
+
+    body {
+        background-color: #000000;
+        background-image: url("/Errors/background.jpg");
+        background-size: cover;
+    }
+
+    section.notFound {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 5%;
+        height: 100vh;
+    }
+
+    section.notFound h1 {
+        color: red;
+        font-size: 100px;
+    }
+
+    section.notFound h2 {
+        font-size: 50px;
+    }
+
+    section.notFound h1,
+    h2,
+    h3 {
+        margin-bottom: 40px;
+    }
+
+    div.text a {
+        text-decoration: none;
+        margin-right: 20px;
+    }
+
+    div.text a:hover {
+        color: red;
+        text-decoration: underline;
+    }
+
+    @media only screen and (max-width: 768px) {
+        section.notFound {
+            flex-direction: column;
+            justify-content: space-around;
+        }
+
+        section.notFound div.img img {
+            width: 70vw;
+            height: auto;
+        }
+
+        section.notFound h1 {
+            font-size: 50px;
+        }
+
+        section.notFound h2 {
+            font-size: 25px;
+        }
+
+        div.text a:active {
+            color: red;
+            text-decoration: underline;
+        }
+    }
+</style>
+ƒ
+<body>
+    <section class="notFound">
+        <div class="text">
+            <h1>403</h1>
+            <h2>Forbidden</h2>
+            <h3>BACK TO HOME?</h3>
+            <a href="../" class="yes">YES</a>
+            <a href="../" class="yes">YES</a>
+        </div>
+    </section>
+</body>
+
+</html>
