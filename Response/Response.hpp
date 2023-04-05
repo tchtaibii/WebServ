@@ -47,7 +47,7 @@ class response
 			}
 
 			std::ostringstream oss;
-			oss << req.version + response_message(status);
+			oss <<  req.version + response_message(status);
 			oss << "Date: " << getCurrentDate() << "\r\n";
 			if (status != 204)
 			{

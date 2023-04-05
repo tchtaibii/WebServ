@@ -17,6 +17,6 @@ clean :
 fclean : clean
 
 push : 
-	git add . && git commit -m "99%" && git push origin main 
+	git add . && git commit -m "adding querry" && git push origin webserv 
 
 re: fclean all

@@ -75,6 +75,18 @@ namespace ws
         buffer << infile.rdbuf();
         return buffer.str();
     }
+    std::string randomString(int length)
+    {
+        srand(time(NULL));                          // seed the random number generator with the current time
+        std::string characters = "ABCDEF123456789"; // the characters to choose from
+        std::string result;
+        for (int i = 0; i < length; i++)
+        {
+            int randomIndex = rand() % characters.length(); // generate a random index
+            result += characters[randomIndex];              // add the random character to the result string
+        }
+        return result;
+    }
     std::string getCurrentDateTime()
     {
         time_t now = time(0);

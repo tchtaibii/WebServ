@@ -239,7 +239,7 @@ namespace ws
 				status = 414;
 			else if (a.empty() && C.empty() && req.method == "POST")
 				status = 400;
-			else if (!C.empty() && atoi(C.c_str()) > atoi(this->body_size.c_str()))
+			else if (!C.empty() && std::atoll(C.c_str()) > std::atoll(this->body_size.c_str()))
 				status = 413;
 			else
 			{

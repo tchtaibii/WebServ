@@ -134,9 +134,9 @@ std::string cgi::get_outfile_path()
 void cgi::fill_env()
 {
     if (req.method == "POST")
-        env = new char *[11];
+        env = new char *[13];
     else
-        env = new char *[9];
+        env = new char *[11];
     std::string s = "PATH_INFO=";
     s.append(path);
     if (!query.empty() && query.find('&') != std::string::npos && req.method == "POST")
@@ -190,23 +190,41 @@ void cgi::fill_env()
     env[7] = new char[s.size() + 1];
     strcpy(env[7], s.c_str());
 
+    s.clear();
+    s = "HTTP_COOKIE=";
+    s.append(req.headers["Cookie"]);
+    env[8] = new char[s.size() + 1];
+    strcpy(env[8], s.c_str());
+
+    s.clear();
+    s = "HTTP_USER_AGENT=";
+    s.append(req.headers["User-Agent"]);
+    env[9] = new char[s.size() + 1];
+    strcpy(env[9], s.c_str());
+
+    s.clear();
+    s = "HTTP_HOST=";
+    s.append("localhost");
+    env[10] = new char[s.size() + 1];
+    strcpy(env[10], s.c_str());
+
     if (req.method == "POST")
     {
         s.clear();
         s = "CONTENT_TYPE=";
         s.append(req.headers["Content-Type"].substr(0, req.headers["Content-Type"].length() - 1));
-        env[8] = new char[s.size() + 1];
-        strcpy(env[8], s.c_str());
+        env[11] = new char[s.size() + 1];
+        strcpy(env[11], s.c_str());
         s.clear();
         s = "CONTENT_LENGTH=";
         s.append(req.headers["Content-Length"]);
-        env[9] = new char[s.size() + 1];
-        strcpy(env[9], s.c_str());
+        env[12] = new char[s.size() + 1];
+        strcpy(env[12], s.c_str());
 
-        env[10] = NULL;
+        env[13] = NULL;
     }
     else
-        env[8] = NULL;
+        env[11] = NULL;
 }
 
 void cgi::exec_cgi(char **args, char **env, int fd)

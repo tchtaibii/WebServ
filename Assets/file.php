@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 setcookie('name', $_POST['name'], $cookie_expiration);
                 setcookie('email', $_POST['email'], $cookie_expiration);
                 setcookie('avatar', $avatar_destination, $cookie_expiration);
+                echo isset($_COOKIE['name']);
             } else {
                 echo 'File too big';
                 exit(1);
@@ -68,6 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <label for="remember_me">Remember me:</label>
             <input type="checkbox" name="remember_me" id="remember_me" value="1" />
             <input type="submit" value="Submit" />
+
         </form>
     <?php endif; ?>
 </div>
