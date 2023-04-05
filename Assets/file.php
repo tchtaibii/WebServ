@@ -22,9 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_COOKIE['name'] = $_POST['name'];
                 $_COOKIE['email'] = $_POST['email'];
                 $_COOKIE['avatar'] = $avatar_destination;
-                setcookie('name', $_POST['name'], time() + 3600 * 24 * 7);
-                setcookie('email', $_POST['email'], time() + 3600 * 24 * 7);
-                setcookie('avatar', $avatar_destination, time() + 3600 * 24 * 7);
+
+                // Set cookie expiration time based on "Remember me" checkbox
+                $cookie_expiration = isset($_POST['remember_me']) ? time() + 3600 * 24 * 7 : time() + 3600 * 24;
+
+                setcookie('name', $_POST['name'], $cookie_expiration);
+                setcookie('email', $_POST['email'], $cookie_expiration);
+                setcookie('avatar', $avatar_destination, $cookie_expiration);
             } else {
                 echo 'File too big';
                 exit(1);
@@ -61,6 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <input type="text" name="name" placeholder="Name" />
             <input type="text" name="email" placeholder="Email" />
             <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" />
+            <label for="remember_me">Remember me:</label>
+            <input type="checkbox" name="remember_me" id="remember_me" value="1" />
             <input type="submit" value="Submit" />
         </form>
     <?php endif; ?>

@@ -28,7 +28,6 @@ namespace ws
 #include "boundary.hpp"
 #include "Chunked.hpp"
 #include "../Config/parse.hpp"
-#include "../Session_management/Session.hpp"
 #include <iostream>
 namespace ws
 {
@@ -211,41 +210,6 @@ namespace ws
                 std::string header_value = line.substr(tmp_pos + 2);
                 req.headers.insert(make_pair(header_name, header_value));
             }
-            if (req.headers.count("Cookie") > 0)
-            {
-                req.cookies = parseKeyValuePairs(req.headers["Cookie"].substr(0, req.headers["Cookie"].length() - 1));
-                req.session = req.cookies["session_id"];
-                std::fstream myfile("./Session_management/sessionIds", std::ios::in | std::ios::out | std::ios::app);
-                std::string line;
-                if (myfile.is_open())
-                {
-                    bool Token_d;
-                    while (getline(myfile, line))
-                    {
-                        if (line.find(req.session) != std::string::npos)
-                        {
-                            Token_d = true;
-                            break;
-                        }
-                        else
-                            Token_d = false;
-                    }
-                    myfile.close();
-                    if (!Token_d)
-                    {
-
-                        std::ofstream myfile2("./Session_management/sessionIds", std::ios::app);
-                        if (myfile2.is_open())
-                        {
-                            myfile2 << "session_id=" + req.session + ";\n";
-                            myfile2.close();
-                        }
-                    }
-                }
-                setCookies_onfile(req.cookies, req.session);
-            }
-            else
-                req.session = generateSession();
             if (req.method == "POST")
             {
                 location my_location = server_.locationChecker(req.path, server_.get_location())->second;

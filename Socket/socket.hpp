@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   socket.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: tchtaibi <tchtaibi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hboukili <hboukili@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/01 15:02:16 by tchtaibi          #+#    #+#             */
-/*   Updated: 2023/03/09 18:24:16 by tchtaibi         ###   ########.fr       */
+/*   Updated: 2023/04/04 06:29:46 by hboukili         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,6 @@ namespace ws
         int connection;
         int listening;
         int backlog;
-        // int new_socket;
         int domain;
         u_long interface;
         int port;
